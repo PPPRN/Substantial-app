@@ -1,207 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Split Pay</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--border:#e5e5e0;--text:#1a1a1a;--muted:#888;--accent:#2d6a4f;--danger:#c0392b;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.page{display:none;min-height:100vh;padding:20px}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+h1{font-size:22px;font-weight:600;margin-bottom:4px}h2{font-size:17px;font-weight:600;margin-bottom:12px}
+p{font-size:14px;color:var(--muted);margin-bottom:8px}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);margin-bottom:8px}
+input:focus{outline:none;border-color:var(--accent)}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+.btn{cursor:pointer;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;border:none;font-family:inherit;transition:opacity .15s}
+.btn:hover{opacity:.85}.btn-primary{background:var(--accent);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-danger{background:var(--danger);color:#fff}.btn-sm{padding:6px 12px;font-size:13px}.btn-full{width:100%}
+.flex-between{display:flex;justify-content:space-between;align-items:center}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500}.badge-green{background:#d8f3dc;color:#1b4332}.badge-red{background:#ffe0e0;color:#7b1d1d}
+.tag{display:inline-flex;align-items:center;gap:4px;background:#f0f0ec;border-radius:20px;padding:3px 10px;font-size:12px;margin:2px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}.toast.show{opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:20px}.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.cb-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px}.cb-row:last-child{border-bottom:none}.cb-row input[type=checkbox]{width:auto;margin:0}
+.amount-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.amount-row:last-child{border-bottom:none}.amount-row input{width:110px;margin:0;text-align:right}
+.summary-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0}
+.total-row{display:flex;justify-content:space-between;font-size:16px;font-weight:600;padding:8px 0;border-top:2px solid var(--border);margin-top:4px}
+.nav-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.nav-tab{padding:7px 14px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:var(--card)}.nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}.list-item:last-child{border-bottom:none}
+.qr-img{max-width:220px;width:100%;border-radius:8px;margin-bottom:12px;border:1px solid var(--border)}
+.copy-row{display:flex;gap:8px;align-items:center;background:#f5f5f3;border-radius:8px;padding:8px 12px;margin:8px 0}.copy-row span{flex:1;font-size:14px;font-weight:500}
+.paid-badge{background:#d8f3dc;color:#1b4332;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:500}
+#loginPage{display:flex;align-items:center;justify-content:center}
+.login-wrap{width:100%;max-width:380px}.login-header{text-align:center;margin-bottom:24px}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.user-btn{padding:14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;font-weight:500;text-align:center;transition:all .15s}.user-btn:hover{border-color:var(--accent);color:var(--accent)}
+.admin-btn{grid-column:1/-1;background:#1a1a1a;color:#fff;border-color:#1a1a1a}.admin-btn:hover{background:#333}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;margin:12px 0 6px}
+</style>
+</head>
+<body>
+<script>
+const CFG={
+  SHEET_URL:'YOUR_APPS_SCRIPT_WEB_APP_URL', // *** IMPORTANT: Update this ***
+  EMAILJS_KEY:'YOUR_EMAILJS_PUBLIC_KEY',
+  EMAILJS_SERVICE:'YOUR_SERVICE_ID',
+  EMAILJS_TPL_USER:'YOUR_USER_TEMPLATE_ID',
+  EMAILJS_TPL_ADMIN:'YOUR_ADMIN_TEMPLATE_ID',
+  ADMIN_NAME:'Por :V',
+  ADMIN_PASS:'1736',
+  PROMPTPAY:'0XX-XXX-XXXX',
+  QR_IMAGE:'qr.png'
+};
+</script>
+<div class="toast" id="toast"></div>
+
+<div class="page active" id="loginPage">
+  <div class="login-wrap">
+    <div class="login-header"><div style="font-size:40px;margin-bottom:8px">💸</div><h1>Split Pay</h1><p>กรุณาเลือกบัญชีผู้ใช้</p></div>
+    <div class="card">
+      <div class="section-label">ผู้ใช้งาน</div>
+      <div class="user-grid" id="userGrid"></div>
+      <div class="section-label">แอดมิน</div>
+      <button class="user-btn admin-btn" onclick="showAdminLogin()">🔐 Por :V (Admin)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal" style="max-width:320px">
+    <h2>🔐 Admin Login</h2><label>รหัสผ่าน</label>
+    <input type="password" id="adminPassInput" placeholder="••••" onkeydown="if(event.key==='Enter')checkAdminPass()">
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('adminModal')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="checkAdminPass()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="userPage">
+  <div style="max-width:480px;margin:0 auto">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div><h1 id="userGreet">สวัสดี</h1><p style="margin:0">รายการที่ต้องจ่าย</p></div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">ออก</button>
+    </div>
+    <div id="userLists"></div>
+    <div class="card" style="background:#f0f7f4;border-color:#b7e4c7">
+      <div class="total-row"><span>ยอดคงเหลือที่ต้องจ่าย</span><span id="userTotal" style="color:var(--accent)">฿0.00</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="payModal">
   <div class="modal" style="max-width:360px">
     <h2 style="text-align:center;margin-bottom:4px">💳 ชำระเงิน</h2>
     <div style="text-align:center;padding:16px 0">
-      <img id="qrImg" src="" alt="QR" class="qr-img" style="background: #eee; min-height: 200px;">
+      <img id="qrImg" src="" alt="QR" class="qr-img">
       <div class="copy-row"><span>Promptpay : <b id="ppNumber"></b></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
-      <p id="payAmountText" style="font-size:24px;font-weight:700;color:var(--accent);margin:8px 0"></p>
+      <p id="fullAmountText" style="font-size:14px;color:var(--muted)"></p>
+      <div style="margin-top:15px">
+        <label>ระบุยอดเงินที่ต้องการจ่าย (฿)</label>
+        <input type="number" id="payAmountInput" style="font-size:20px;text-align:center;font-weight:600">
+        <div style="display:flex;gap:5px">
+             <button class="btn btn-sm btn-outline btn-full" onclick="setFullPay()">จ่ายเต็มจำนวน</button>
+        </div>
+      </div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" style="flex:1" onclick="closeModal('payModal')">ปิด</button>
-      <button id="confirmPaidBtn" class="btn btn-primary" style="flex:1" onclick="confirmPaid()">✅ จ่ายแล้ว</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmPaid()">✅ แจ้งโอนเงิน</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="adminPage">
+  <div style="max-width:680px;margin:0 auto">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div><h1>⚙️ Admin</h1><p style="margin:0">จัดการรายการทั้งหมด</p></div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">ออก</button>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-tab active" id="navOverview" onclick="adminTab('overview')">ภาพรวม</div>
+      <div class="nav-tab" id="navPending" onclick="adminTab('pending')">รอยืนยัน</div>
+      <div class="nav-tab" id="navUsers" onclick="adminTab('users')">ผู้ใช้</div>
+      <div class="nav-tab" id="navSettings" onclick="adminTab('settings')">ตั้งค่า QR</div>
+      <div class="nav-tab" id="navAddlist" onclick="adminTab('addlist')">+ เพิ่มรายการ</div>
+    </div>
+    <div id="tab-overview"></div>
+    <div id="tab-pending" style="display:none"></div>
+    <div id="tab-users" style="display:none">
+      <div class="card"><h2>เพิ่มผู้ใช้ใหม่</h2>
+        <div class="grid2"><div><label>ชื่อ</label><input id="newUserName" placeholder="ชื่อผู้ใช้"></div><div><label>อีเมล</label><input id="newUserEmail" type="email" placeholder="email@example.com"></div></div>
+        <button class="btn btn-primary" onclick="addUser()">เพิ่มผู้ใช้</button>
+      </div>
+      <div class="card"><h2>ผู้ใช้ทั้งหมด</h2><div id="usersList"></div></div>
+    </div>
+    <div id="tab-settings" style="display:none">
+        <div class="card">
+            <h2>ตั้งค่าช่องทางชำระเงิน</h2>
+            <label>หมายเลข PromptPay</label>
+            <input type="text" id="settingPP" placeholder="0XX-XXX-XXXX">
+            <label>URL รูปภาพ QR Code</label>
+            <input type="text" id="settingQR" placeholder="https://...">
+            <button class="btn btn-primary" onclick="saveSettings()">บันทึกการตั้งค่า</button>
+        </div>
+    </div>
+    <div id="tab-addlist" style="display:none">
+      <div id="addFormContainer">
+          <div class="card"><h2>เลือกประเภทรายการ</h2>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="showAddForm('normal')">📋 Normal Divide</button>
+              <button class="btn btn-outline" onclick="showAddForm('advance')">🧮 Advance Divide</button>
+            </div>
+          </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-let STATE={users:[],lists:[],payments:[],currentUser:null,isAdmin:false,payingListId:null};
+let STATE={users:[],lists:[],payments:[],currentUser:null,isAdmin:false,payingListId:null,payingLimit:0};
 let calcData={},subItemCount=0;
 
 emailjs.init(CFG.EMAILJS_KEY);
-document.getElementById('ppNumber').textContent=CFG.PROMPTPAY;
-loadData();
 
-// --- DATA CORE ---
+// 2. DATABASE FIX: Ensure correct Content-Type for Google Apps Script
+async function gsFetch(data){
+    const r=await fetch(CFG.SHEET_URL,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'}, // Apps Script prefers text/plain to avoid CORS preflight issues
+        body:JSON.stringify(data)
+    });
+    return r.json();
+}
+async function gsWrite(data){try{return await gsFetch(data);}catch(e){console.error(e)}}
+
 async function loadData(){
   try{
-    if(CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL') throw 'demo';
-    const r = await gsFetch({action:'GET'});
-    STATE.users = r.users || []; 
-    STATE.lists = r.lists || []; 
-    STATE.payments = r.payments || [];
-  } catch(e) { 
-    console.error("Load failed:", e);
-  }
+    const r=await gsFetch({action:'GET'});
+    STATE.users=r.users||[]; STATE.lists=r.lists||[]; STATE.payments=r.payments||[];
+    // 5. Apply Config from sheet if exists (optional) or use CFG
+    document.getElementById('ppNumber').textContent=CFG.PROMPTPAY;
+    document.getElementById('qrImg').src=CFG.QR_IMAGE;
+  }catch(e){ console.log("Demo Mode"); }
   renderLogin();
 }
+loadData();
 
-async function gsFetch(data){
-  const r = await fetch(CFG.SHEET_URL, {method:'POST', body:JSON.stringify(data)});
-  return r.json();
-}
-
-async function gsWrite(data){
-  try { return await gsFetch(data); } catch(e) { toast("Error saving data"); }
-}
-
-// --- LOGIN & NAVIGATION ---
 function renderLogin(){
-  const g = document.getElementById('userGrid');
-  g.innerHTML = STATE.users.length 
-    ? STATE.users.map(u => `<button class="user-btn" onclick="loginUser('${u.id}')">${u.name}</button>`).join('')
-    : '<p style="grid-column:1/-1;color:var(--muted);text-align:center">ยังไม่มีผู้ใช้</p>';
+  const g=document.getElementById('userGrid');
+  g.innerHTML=STATE.users.length?STATE.users.map(u=>`<button class="user-btn" onclick="loginUser('${u.id}')">${u.name}</button>`).join(''):'<p style="grid-column:1/-1;color:var(--muted);text-align:center">กำลังโหลด...</p>';
 }
 
 function loginUser(uid){
-  STATE.currentUser = STATE.users.find(x => x.id === uid);
-  STATE.isAdmin = false;
-  showPage('userPage');
-  renderUserPage();
+    const u=STATE.users.find(x=>x.id===uid);
+    if(!u)return;
+    STATE.currentUser=u;
+    STATE.isAdmin=false;
+    showPage('userPage');
+    renderUserPage();
 }
 
-function showAdminLogin(){
-  document.getElementById('adminPassInput').value='';
-  openModal('adminModal');
-  setTimeout(()=>document.getElementById('adminPassInput').focus(), 100);
-}
-
-function checkAdminPass(){
-  if(document.getElementById('adminPassInput').value === CFG.ADMIN_PASS){
-    closeModal('adminModal');
-    STATE.isAdmin = true;
-    STATE.currentUser = {id:'admin', name:CFG.ADMIN_NAME};
-    showPage('adminPage');
-    renderAdmin();
-  } else { toast('รหัสผ่านไม่ถูกต้อง ❌'); }
-}
-
-function logout(){
-  STATE.currentUser = null;
-  STATE.isAdmin = false;
-  showPage('loginPage');
-  loadData();
-}
-
-// --- USER FEATURES ---
 function renderUserPage(){
-  document.getElementById('userGreet').textContent = 'สวัสดี, ' + STATE.currentUser.name;
-  const uid = STATE.currentUser.id;
-  const myL = STATE.lists.filter(l => l.members && l.members.includes(uid));
-  let total = 0;
+  document.getElementById('userGreet').textContent='สวัสดี, '+STATE.currentUser.name;
+  const uid=STATE.currentUser.id;
+  const myL=STATE.lists.filter(l=>l.members&&l.members.includes(uid));
+  let totalLeft=0;
 
-  document.getElementById('userLists').innerHTML = myL.map(l => {
-    const amt = getUserAmount(l, uid);
-    const paid = isPaid(l.id, uid);
-    if(!paid) total += amt;
-
-    return `
-    <div class="card">
-      <div class="flex-between">
-        <div>
-          <div style="font-weight:600;font-size:15px">${l.name}</div>
-          <div style="font-size:12px;color:var(--muted)">${typeTH(l.type)}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:18px;font-weight:700;color:${paid?'var(--muted)':'var(--accent)'}">฿${fmt(amt)}</div>
-          ${paid ? '<span class="paid-badge">จ่ายแล้ว ✓</span>' : `<button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="openPay('${l.id}',${amt})">จ่ายเงิน</button>`}
-        </div>
-      </div>
-    </div>`;
-  }).join('') || '<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีรายการค้างชำระ</div>';
+  document.getElementById('userLists').innerHTML=myL.map(l=>{
+    const amountOwed = getUserAmount(l, uid);
+    if(amountOwed <= 0) return '';
+    totalLeft += amountOwed;
+    
+    return `<div class="card"><div class="flex-between"><div><div style="font-weight:500;font-size:15px">${l.name}</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(amountOwed)}</div><button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="openPay('${l.id}',${amountOwed})">จ่ายเงิน</button></div></div></div>`;
+  }).join('') || '<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีรายการค้างจ่าย</div>';
   
-  document.getElementById('userTotal').textContent = '฿' + fmt(total);
+  document.getElementById('userTotal').textContent='฿'+fmt(totalLeft);
 }
 
-function openPay(lid, amt){
-  STATE.payingListId = lid;
-  // Feature: Dynamic PromptPay QR
-  const cleanPhone = CFG.PROMPTPAY.replace(/-/g, '');
-  document.getElementById('qrImg').src = `https://promptpay.io/${cleanPhone}/${amt}.png`;
-  document.getElementById('payAmountText').textContent = '฿' + fmt(amt);
+function openPay(lid, maxAmt){
+  STATE.payingListId=lid;
+  STATE.payingLimit=maxAmt;
+  document.getElementById('fullAmountText').textContent = `ยอดค้างชำระ: ฿${fmt(maxAmt)}`;
+  document.getElementById('payAmountInput').value = maxAmt;
   openModal('payModal');
 }
 
-async function confirmPaid(){
-  const btn = document.getElementById('confirmPaidBtn');
-  btn.disabled = true;
-  btn.textContent = "กำลังบันทึก...";
+function setFullPay(){ document.getElementById('payAmountInput').value = STATE.payingLimit; }
 
-  const uid = STATE.currentUser.id;
-  const lid = STATE.payingListId;
-  const pmt = {id:'p'+Date.now(), listId:lid, userId:uid, status:'paid', time:new Date().toISOString()};
-  
-  await gsWrite({action:'addPayment', ...pmt});
+// 3. User submits payment for Admin to confirm
+async function confirmPaid(){
+  const amt = Number(document.getElementById('payAmountInput').value);
+  if(amt <= 0 || amt > STATE.payingLimit + 0.01){ toast('ยอดเงินไม่ถูกต้อง'); return; }
+
+  const pmt={
+      id:'p'+Date.now(),
+      listId:STATE.payingListId,
+      userId:STATE.currentUser.id,
+      userName:STATE.currentUser.name,
+      amount:amt,
+      status:'pending',
+      time:new Date().toISOString()
+  };
+
+  await gsWrite({action:'addPayment',...pmt});
   STATE.payments.push(pmt);
-  
-  const list = STATE.lists.find(l => l.id === lid);
-  notifyAdmin(`${STATE.currentUser.name} จ่ายเงินรายการ "${list?.name}" แล้ว`);
-  
-  btn.disabled = false;
-  btn.textContent = "✅ จ่ายแล้ว";
+
+  // 4. EMAILJS: Send detail to user
+  const list = STATE.lists.find(l=>l.id===pmt.listId);
+  emailjs.send(CFG.EMAILJS_SERVICE, CFG.EMAILJS_TPL_USER, {
+      to_email: STATE.currentUser.email,
+      to_name: STATE.currentUser.name,
+      list_name: list.name,
+      paid_amount: fmt(amt),
+      remaining: fmt(STATE.payingLimit - amt),
+      status: "รอยืนยัน"
+  });
+
   closeModal('payModal');
-  toast('บันทึกการจ่ายแล้ว ✅');
+  toast('ส่งหลักฐานแล้ว รอยืนยันจากแอดมิน ✅');
   renderUserPage();
 }
 
-// --- ADMIN FEATURES ---
 function renderAdmin(){
-  renderAdminOverview();
-  renderUsersList();
-  renderSubList();
+    renderAdminOverview();
+    renderPendingPayments();
+    renderUsersList();
 }
 
-function renderAdminOverview(){
-  document.getElementById('tab-overview').innerHTML = STATE.lists.slice().reverse().map(l => {
-    const paidCount = STATE.payments.filter(p => p.listId === l.id).length;
-    return `
-    <div class="card">
-      <div class="flex-between">
-        <div>
-          <div style="font-weight:600">${l.name}</div>
-          <div style="font-size:12px;color:var(--muted)">ยอดรวม: ฿${fmt(l.total)} | จ่ายแล้ว ${paidCount}/${l.members.length} คน</div>
-        </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteList('${l.id}')">ลบ</button>
-      </div>
-      <div class="divider"></div>
-      ${l.members.map(uid => {
-        const u = STATE.users.find(x => x.id === uid);
-        const pd = isPaid(l.id, uid);
-        return `
-        <div class="amount-row">
-          <span>${u?.name || 'Unknown'}</span>
-          <span class="badge ${pd?'badge-green':'badge-red'}">${pd?'จ่ายแล้ว':'ค้างจ่าย'} (฿${fmt(getUserAmount(l, uid))})</span>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }).join('') || '<p style="text-align:center;padding:20px;color:var(--muted)">ยังไม่มีรายการ</p>';
+function renderPendingPayments(){
+    const pending = STATE.payments.filter(p=>p.status==='pending');
+    document.getElementById('tab-pending').innerHTML = pending.map(p=>{
+        const list = STATE.lists.find(l=>l.id===p.listId);
+        return `<div class="card"><div class="flex-between"><div><b>${p.userName}</b><br><small>${list?.name}</small></div><div style="text-align:right"><div style="color:var(--accent);font-weight:600">฿${fmt(p.amount)}</div><button class="btn btn-primary btn-sm" onclick="approvePayment('${p.id}')">ยืนยันยอด</button></div></div></div>`;
+    }).join('') || '<p style="text-align:center;padding:20px;color:var(--muted)">ไม่มีรายการรอยืนยัน</p>';
 }
 
-async function deleteList(lid){
-  if(!confirm('ยืนยันการลบรายการนี้?')) return;
-  await gsWrite({action:'removeList', id:lid});
-  STATE.lists = STATE.lists.filter(l => l.id !== lid);
-  renderAdminOverview();
-  toast('ลบรายการแล้ว');
+// 3. Admin Confirmation logic
+async function approvePayment(pid){
+    const pmt = STATE.payments.find(p=>p.id===pid);
+    if(!pmt) return;
+
+    // Logic: Update the list userAmount by subtracting the paid value
+    const list = STATE.lists.find(l=>l.id===pmt.listId);
+    if(list && list.userAmounts[pmt.userId]){
+        list.userAmounts[pmt.userId] -= pmt.amount;
+    }
+    
+    pmt.status = 'approved';
+    await gsWrite({action:'approvePayment', id:pid, listId:pmt.listId, userId:pmt.userId, amount:pmt.amount});
+    
+    toast('ยืนยันยอดเงินสำเร็จ');
+    renderAdmin();
 }
 
-// --- HELPERS ---
-function getUserAmount(l, uid){ return l.userAmounts && l.userAmounts[uid] ? Number(l.userAmounts[uid]) : 0; }
-function isPaid(lid, uid){ return STATE.payments.some(p => p.listId === lid && p.userId === uid); }
-function fmt(n){ return Number(n).toLocaleString('th-TH', {minimumFractionDigits:2}); }
-function typeTH(t){ return {normal:'แบ่งเท่ากัน', advance:'แบ่งตามจริง', subscription:'รายเดือน'}[t] || t; }
-function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-function toast(msg){ 
-  const t = document.getElementById('toast'); 
-  t.textContent = msg; t.classList.add('show'); 
-  setTimeout(()=>t.classList.remove('show'), 2500); 
+// 5. Settings update
+function saveSettings(){
+    CFG.PROMPTPAY = document.getElementById('settingPP').value;
+    CFG.QR_IMAGE = document.getElementById('settingQR').value;
+    document.getElementById('ppNumber').textContent=CFG.PROMPTPAY;
+    document.getElementById('qrImg').src=CFG.QR_IMAGE;
+    toast('บันทึกการตั้งค่าแล้ว (ชั่วคราว)');
 }
+
+function getUserAmount(l,uid){return l.userAmounts&&l.userAmounts[uid]!==undefined?Number(l.userAmounts[uid]):0;}
+function logout(){STATE.currentUser=null;STATE.isAdmin=false;showPage('loginPage');loadData();}
+function fmt(n){return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function typeTH(t){return{normal:'แบ่งปกติ',advance:'แบ่งละเอียด'}[t]||t;}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
 function adminTab(tab){
-  ['overview','users','subscriptions','addlist'].forEach(t=>{
-    document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
-    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  ['overview','pending','users','settings','addlist'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'':'none';
+    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===tab);
   });
 }
-// (Remaining helper functions like addUser, addSubItem, calc functions remain largely the same)
+
+function showAdminLogin(){document.getElementById('adminPassInput').value='';openModal('adminModal');}
+function checkAdminPass(){if(document.getElementById('adminPassInput').value===CFG.ADMIN_PASS){closeModal('adminModal');STATE.isAdmin=true;showPage('adminPage');renderAdmin();}else toast('ผิด');}
+
+// ... rest of your existing logic for addUser, renderUsersList, etc. (keep your original logic here)
 </script>
+</body>
+</html>
