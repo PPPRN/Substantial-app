@@ -57,7 +57,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 <body>
 <script>
 const CFG={
-  SHEET_URL:'https://script.google.com/macros/s/AKfycbxzb2odgqDie2WVYE-fjjDO1DvuHALi75mXcEqXt1Nm7ThsygWdtGZiHUHlfdh9QDKz/execL',
+  SHEET_URL:'https://script.google.com/macros/s/AKfycbzntqsw5JKDkGs108l6FQRRpqLMWvb19W5PlDwT7A_VfISCmV90aljeEGFar5KcfOGz/exec',
   EMAILJS_KEY:'OJimmjdJNEAG_BMEY',
   EMAILJS_SERVICE:'service_5755b1o',
   EMAILJS_TPL_USER:'template_kytkrgn',
@@ -224,23 +224,15 @@ async function loadData(){
     }catch(e){}
   } else {
     try{
-      const url = CFG.SHEET_URL + '?action=GET&t=' + Date.now();
-      const r = await fetch(url, {
-        method: 'GET',
-        redirect: 'follow',
-        mode: 'cors'
-      });
-      const text = await r.text();
-      console.log('raw response:', text.substring(0,200));
-      const data = JSON.parse(text);
+      const url = CFG.SHEET_URL + '?action=GET';
+      const r = await fetch(url, {redirect:'follow'});
+      const data = await r.json();
       STATE.users = data.users||[];
       STATE.lists = (data.lists||[]).map(parseListJSON);
       STATE.payments = data.payments||[];
       STATE.pendingPays = data.pendingPays||[];
       STATE.settings = data.settings||{promptpay:'',qr:''};
-      console.log('loaded:', STATE.users.length, 'users');
     }catch(e){
-      console.error('loadData error:', e.message);
       toast('โหลดไม่ได้: '+e.message);
     }
   }
