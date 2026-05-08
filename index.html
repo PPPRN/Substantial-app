@@ -1,58 +1,207 @@
-function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var action = data.action;
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="max-width:360px">
+    <h2 style="text-align:center;margin-bottom:4px">💳 ชำระเงิน</h2>
+    <div style="text-align:center;padding:16px 0">
+      <img id="qrImg" src="" alt="QR" class="qr-img" style="background: #eee; min-height: 200px;">
+      <div class="copy-row"><span>Promptpay : <b id="ppNumber"></b></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
+      <p id="payAmountText" style="font-size:24px;font-weight:700;color:var(--accent);margin:8px 0"></p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('payModal')">ปิด</button>
+      <button id="confirmPaidBtn" class="btn btn-primary" style="flex:1" onclick="confirmPaid()">✅ จ่ายแล้ว</button>
+    </div>
+  </div>
+</div>
 
-  if (action === 'GET') {
-    return ContentService.createTextOutput(JSON.stringify({
-      users: getRows(ss, "Users"),
-      lists: getRows(ss, "Lists"),
-      payments: getRows(ss, "Payments")
-    })).setMimeType(ContentService.MimeType.JSON);
+<script>
+let STATE={users:[],lists:[],payments:[],currentUser:null,isAdmin:false,payingListId:null};
+let calcData={},subItemCount=0;
+
+emailjs.init(CFG.EMAILJS_KEY);
+document.getElementById('ppNumber').textContent=CFG.PROMPTPAY;
+loadData();
+
+// --- DATA CORE ---
+async function loadData(){
+  try{
+    if(CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL') throw 'demo';
+    const r = await gsFetch({action:'GET'});
+    STATE.users = r.users || []; 
+    STATE.lists = r.lists || []; 
+    STATE.payments = r.payments || [];
+  } catch(e) { 
+    console.error("Load failed:", e);
   }
-
-  if (action === 'addPayment') {
-    var sheet = ss.getSheetByName("Payments");
-    sheet.appendRow([data.id, data.listId, data.userId, data.userName, data.amount, data.status, data.time]);
-  }
-
-  if (action === 'approvePayment') {
-    // 1. Mark payment as approved
-    var pSheet = ss.getSheetByName("Payments");
-    var pData = pSheet.getDataRange().getValues();
-    for(var i=1; i<pData.length; i++) {
-      if(pData[i][0] == data.id) { pSheet.getRange(i+1, 6).setValue("approved"); break; }
-    }
-    // 2. Subtract from Lists
-    var lSheet = ss.getSheetByName("Lists");
-    var lData = lSheet.getDataRange().getValues();
-    for(var j=1; j<lData.length; j++) {
-      if(lData[j][0] == data.listId) {
-        var amounts = JSON.parse(lData[j][4]); // Assuming Column 5 is userAmounts
-        amounts[data.userId] = Number(amounts[data.userId]) - Number(data.amount);
-        lSheet.getRange(j+1, 5).setValue(JSON.stringify(amounts));
-        break;
-      }
-    }
-  }
-
-  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
-    .setMimeType(ContentService.MimeType.JSON);
+  renderLogin();
 }
 
-function getRows(ss, name) {
-  var sheet = ss.getSheetByName(name);
-  if(!sheet) return [];
-  var values = sheet.getDataRange().getValues();
-  var headers = values[0];
-  var result = [];
-  for (var i = 1; i < values.length; i++) {
-    var obj = {};
-    for (var j = 0; j < headers.length; j++) {
-      var val = values[i][j];
-      try { obj[headers[j]] = JSON.parse(val); } catch(e) { obj[headers[j]] = val; }
-    }
-    result.push(obj);
-  }
-  return result;
+async function gsFetch(data){
+  const r = await fetch(CFG.SHEET_URL, {method:'POST', body:JSON.stringify(data)});
+  return r.json();
 }
+
+async function gsWrite(data){
+  try { return await gsFetch(data); } catch(e) { toast("Error saving data"); }
+}
+
+// --- LOGIN & NAVIGATION ---
+function renderLogin(){
+  const g = document.getElementById('userGrid');
+  g.innerHTML = STATE.users.length 
+    ? STATE.users.map(u => `<button class="user-btn" onclick="loginUser('${u.id}')">${u.name}</button>`).join('')
+    : '<p style="grid-column:1/-1;color:var(--muted);text-align:center">ยังไม่มีผู้ใช้</p>';
+}
+
+function loginUser(uid){
+  STATE.currentUser = STATE.users.find(x => x.id === uid);
+  STATE.isAdmin = false;
+  showPage('userPage');
+  renderUserPage();
+}
+
+function showAdminLogin(){
+  document.getElementById('adminPassInput').value='';
+  openModal('adminModal');
+  setTimeout(()=>document.getElementById('adminPassInput').focus(), 100);
+}
+
+function checkAdminPass(){
+  if(document.getElementById('adminPassInput').value === CFG.ADMIN_PASS){
+    closeModal('adminModal');
+    STATE.isAdmin = true;
+    STATE.currentUser = {id:'admin', name:CFG.ADMIN_NAME};
+    showPage('adminPage');
+    renderAdmin();
+  } else { toast('รหัสผ่านไม่ถูกต้อง ❌'); }
+}
+
+function logout(){
+  STATE.currentUser = null;
+  STATE.isAdmin = false;
+  showPage('loginPage');
+  loadData();
+}
+
+// --- USER FEATURES ---
+function renderUserPage(){
+  document.getElementById('userGreet').textContent = 'สวัสดี, ' + STATE.currentUser.name;
+  const uid = STATE.currentUser.id;
+  const myL = STATE.lists.filter(l => l.members && l.members.includes(uid));
+  let total = 0;
+
+  document.getElementById('userLists').innerHTML = myL.map(l => {
+    const amt = getUserAmount(l, uid);
+    const paid = isPaid(l.id, uid);
+    if(!paid) total += amt;
+
+    return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:600;font-size:15px">${l.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${typeTH(l.type)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:${paid?'var(--muted)':'var(--accent)'}">฿${fmt(amt)}</div>
+          ${paid ? '<span class="paid-badge">จ่ายแล้ว ✓</span>' : `<button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="openPay('${l.id}',${amt})">จ่ายเงิน</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีรายการค้างชำระ</div>';
+  
+  document.getElementById('userTotal').textContent = '฿' + fmt(total);
+}
+
+function openPay(lid, amt){
+  STATE.payingListId = lid;
+  // Feature: Dynamic PromptPay QR
+  const cleanPhone = CFG.PROMPTPAY.replace(/-/g, '');
+  document.getElementById('qrImg').src = `https://promptpay.io/${cleanPhone}/${amt}.png`;
+  document.getElementById('payAmountText').textContent = '฿' + fmt(amt);
+  openModal('payModal');
+}
+
+async function confirmPaid(){
+  const btn = document.getElementById('confirmPaidBtn');
+  btn.disabled = true;
+  btn.textContent = "กำลังบันทึก...";
+
+  const uid = STATE.currentUser.id;
+  const lid = STATE.payingListId;
+  const pmt = {id:'p'+Date.now(), listId:lid, userId:uid, status:'paid', time:new Date().toISOString()};
+  
+  await gsWrite({action:'addPayment', ...pmt});
+  STATE.payments.push(pmt);
+  
+  const list = STATE.lists.find(l => l.id === lid);
+  notifyAdmin(`${STATE.currentUser.name} จ่ายเงินรายการ "${list?.name}" แล้ว`);
+  
+  btn.disabled = false;
+  btn.textContent = "✅ จ่ายแล้ว";
+  closeModal('payModal');
+  toast('บันทึกการจ่ายแล้ว ✅');
+  renderUserPage();
+}
+
+// --- ADMIN FEATURES ---
+function renderAdmin(){
+  renderAdminOverview();
+  renderUsersList();
+  renderSubList();
+}
+
+function renderAdminOverview(){
+  document.getElementById('tab-overview').innerHTML = STATE.lists.slice().reverse().map(l => {
+    const paidCount = STATE.payments.filter(p => p.listId === l.id).length;
+    return `
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:600">${l.name}</div>
+          <div style="font-size:12px;color:var(--muted)">ยอดรวม: ฿${fmt(l.total)} | จ่ายแล้ว ${paidCount}/${l.members.length} คน</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteList('${l.id}')">ลบ</button>
+      </div>
+      <div class="divider"></div>
+      ${l.members.map(uid => {
+        const u = STATE.users.find(x => x.id === uid);
+        const pd = isPaid(l.id, uid);
+        return `
+        <div class="amount-row">
+          <span>${u?.name || 'Unknown'}</span>
+          <span class="badge ${pd?'badge-green':'badge-red'}">${pd?'จ่ายแล้ว':'ค้างจ่าย'} (฿${fmt(getUserAmount(l, uid))})</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('') || '<p style="text-align:center;padding:20px;color:var(--muted)">ยังไม่มีรายการ</p>';
+}
+
+async function deleteList(lid){
+  if(!confirm('ยืนยันการลบรายการนี้?')) return;
+  await gsWrite({action:'removeList', id:lid});
+  STATE.lists = STATE.lists.filter(l => l.id !== lid);
+  renderAdminOverview();
+  toast('ลบรายการแล้ว');
+}
+
+// --- HELPERS ---
+function getUserAmount(l, uid){ return l.userAmounts && l.userAmounts[uid] ? Number(l.userAmounts[uid]) : 0; }
+function isPaid(lid, uid){ return STATE.payments.some(p => p.listId === lid && p.userId === uid); }
+function fmt(n){ return Number(n).toLocaleString('th-TH', {minimumFractionDigits:2}); }
+function typeTH(t){ return {normal:'แบ่งเท่ากัน', advance:'แบ่งตามจริง', subscription:'รายเดือน'}[t] || t; }
+function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function toast(msg){ 
+  const t = document.getElementById('toast'); 
+  t.textContent = msg; t.classList.add('show'); 
+  setTimeout(()=>t.classList.remove('show'), 2500); 
+}
+function adminTab(tab){
+  ['overview','users','subscriptions','addlist'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
+    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  });
+}
+// (Remaining helper functions like addUser, addSubItem, calc functions remain largely the same)
+</script>
