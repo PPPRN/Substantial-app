@@ -57,11 +57,11 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 <body>
 <script>
 const CFG={
-  SHEET_URL:'YOUR_APPS_SCRIPT_WEB_APP_URL',
-  EMAILJS_KEY:'YOUR_EMAILJS_PUBLIC_KEY',
-  EMAILJS_SERVICE:'YOUR_SERVICE_ID',
-  EMAILJS_TPL_USER:'YOUR_USER_TEMPLATE_ID',
-  EMAILJS_TPL_ADMIN:'YOUR_ADMIN_TEMPLATE_ID',
+  SHEET_URL:'https://script.google.com/macros/s/AKfycbxzb2odgqDie2WVYE-fjjDO1DvuHALi75mXcEqXt1Nm7ThsygWdtGZiHUHlfdh9QDKz/execL',
+  EMAILJS_KEY:'OJimmjdJNEAG_BMEY',
+  EMAILJS_SERVICE:'service_5755b1o',
+  EMAILJS_TPL_USER:'template_kytkrgn',
+  EMAILJS_TPL_ADMIN:'template_ae8x5u2',
   ADMIN_NAME:'Por :V',
   ADMIN_PASS:'1736'
 };
@@ -207,7 +207,7 @@ const CFG={
 <script>
 let STATE={users:[],lists:[],payments:[],pendingPays:[],currentUser:null,isAdmin:false,settings:{promptpay:'',qr:''}};
 let calcData={},subItemCount=0;
-const USE_LOCAL=CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL';
+const USE_LOCAL=CFG.SHEET_URL==='https://script.google.com/macros/s/AKfycbxzb2odgqDie2WVYE-fjjDO1DvuHALi75mXcEqXt1Nm7ThsygWdtGZiHUHlfdh9QDKz/exec';
 
 emailjs.init(CFG.EMAILJS_KEY);
 loadData();
