@@ -9,7 +9,10 @@
 :root{--bg:#f7f7f5;--card:#fff;--border:#e5e5e0;--text:#1a1a1a;--muted:#888;--accent:#2d6a4f;--danger:#c0392b;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.07)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.page{display:none;min-height:100vh;padding:20px}.page.active{display:block}
+.page{display:none;min-height:100vh;padding:20px}
+.page.active{display:block}
+#loginPage.active{display:flex}
+#selectPage{background:var(--bg)}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
 h1{font-size:22px;font-weight:600;margin-bottom:4px}h2{font-size:17px;font-weight:600;margin-bottom:12px}
 p{font-size:14px;color:var(--muted);margin-bottom:8px}
@@ -35,7 +38,8 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 .qr-preview{max-width:180px;border-radius:8px;border:1px solid var(--border);display:block;margin:8px auto}
 .copy-row{display:flex;gap:8px;align-items:center;background:#f5f5f3;border-radius:8px;padding:8px 12px;margin:8px 0}.copy-row span{flex:1;font-size:14px;font-weight:500}
 /* Login */
-#loginPage{background:linear-gradient(135deg,#1b4332,#2d6a4f);display:flex;align-items:center;justify-content:center}
+#loginPage{background:linear-gradient(135deg,#1b4332,#2d6a4f);align-items:center;justify-content:center}
+#loginPage.active{display:flex}
 .login-wrap{width:100%;max-width:380px}
 .login-header{text-align:center;margin-bottom:28px;color:#fff}
 .login-header h1{color:#fff;font-size:28px}
