@@ -224,15 +224,25 @@ async function loadData(){
     }catch(e){}
   } else {
     try{
-      // GET-based fetch — no CORS issue
-      const r=await fetch(CFG.SHEET_URL+'?action=GET');
-      const data=await r.json();
-      STATE.users=data.users||[];
-      STATE.lists=(data.lists||[]).map(parseListJSON);
-      STATE.payments=data.payments||[];
-      STATE.pendingPays=data.pendingPays||[];
-      STATE.settings=data.settings||{promptpay:'',qr:''};
-    }catch(e){toast('⚠️ โหลด Sheet ไม่ได้: '+e.message);}
+      const url = CFG.SHEET_URL + '?action=GET&t=' + Date.now();
+      const r = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+        mode: 'cors'
+      });
+      const text = await r.text();
+      console.log('raw response:', text.substring(0,200));
+      const data = JSON.parse(text);
+      STATE.users = data.users||[];
+      STATE.lists = (data.lists||[]).map(parseListJSON);
+      STATE.payments = data.payments||[];
+      STATE.pendingPays = data.pendingPays||[];
+      STATE.settings = data.settings||{promptpay:'',qr:''};
+      console.log('loaded:', STATE.users.length, 'users');
+    }catch(e){
+      console.error('loadData error:', e.message);
+      toast('โหลดไม่ได้: '+e.message);
+    }
   }
   renderLogin();
 }
@@ -240,8 +250,13 @@ async function loadData(){
 async function gsWrite(data){
   if(USE_LOCAL){saveLocal();return;}
   try{
-    await fetch(CFG.SHEET_URL+'?action=write&data='+encodeURIComponent(JSON.stringify(data)));
-  }catch(e){console.warn('write failed',e); saveLocal();}
+    const url = CFG.SHEET_URL + '?action=write&data=' + encodeURIComponent(JSON.stringify(data));
+    await fetch(url, {method:'GET', redirect:'follow', mode:'cors'});
+    saveLocal();
+  }catch(e){
+    console.error('write error:', e.message);
+    saveLocal();
+  }
 }
 
 function saveLocal(){
