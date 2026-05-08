@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Split Pay</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--border:#e5e5e0;--text:#1a1a1a;--muted:#888;--accent:#2d6a4f;--danger:#c0392b;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.page{display:none;min-height:100vh;padding:20px}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+h1{font-size:22px;font-weight:600;margin-bottom:4px}h2{font-size:17px;font-weight:600;margin-bottom:12px}
+p{font-size:14px;color:var(--muted);margin-bottom:8px}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);margin-bottom:8px}
+input:focus{outline:none;border-color:var(--accent)}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+.btn{cursor:pointer;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;border:none;font-family:inherit;transition:opacity .15s}
+.btn:hover{opacity:.85}.btn-primary{background:var(--accent);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-danger{background:var(--danger);color:#fff}.btn-sm{padding:6px 12px;font-size:13px}.btn-full{width:100%}
+.flex-between{display:flex;justify-content:space-between;align-items:center}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500}.badge-green{background:#d8f3dc;color:#1b4332}.badge-red{background:#ffe0e0;color:#7b1d1d}
+.tag{display:inline-flex;align-items:center;gap:4px;background:#f0f0ec;border-radius:20px;padding:3px 10px;font-size:12px;margin:2px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}.toast.show{opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:20px}.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.cb-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px}.cb-row:last-child{border-bottom:none}.cb-row input[type=checkbox]{width:auto;margin:0}
+.amount-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.amount-row:last-child{border-bottom:none}.amount-row input{width:110px;margin:0;text-align:right}
+.summary-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0}
+.total-row{display:flex;justify-content:space-between;font-size:16px;font-weight:600;padding:8px 0;border-top:2px solid var(--border);margin-top:4px}
+.nav-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.nav-tab{padding:7px 14px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:var(--card)}.nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}.list-item:last-child{border-bottom:none}
+.qr-img{max-width:220px;width:100%;border-radius:8px;margin-bottom:12px;border:1px solid var(--border)}
+.copy-row{display:flex;gap:8px;align-items:center;background:#f5f5f3;border-radius:8px;padding:8px 12px;margin:8px 0}.copy-row span{flex:1;font-size:14px;font-weight:500}
+.paid-badge{background:#d8f3dc;color:#1b4332;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:500}
+#loginPage{display:flex;align-items:center;justify-content:center}
+.login-wrap{width:100%;max-width:380px}.login-header{text-align:center;margin-bottom:24px}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.user-btn{padding:14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;font-weight:500;text-align:center;transition:all .15s}.user-btn:hover{border-color:var(--accent);color:var(--accent)}
+.admin-btn{grid-column:1/-1;background:#1a1a1a;color:#fff;border-color:#1a1a1a}.admin-btn:hover{background:#333}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;margin:12px 0 6px}
+</style>
+</head>
+<body>
+<script>
+const CFG={
+  SHEET_URL:'YOUR_APPS_SCRIPT_WEB_APP_URL',
+  EMAILJS_KEY:'YOUR_EMAILJS_PUBLIC_KEY',
+  EMAILJS_SERVICE:'YOUR_SERVICE_ID',
+  EMAILJS_TPL_USER:'YOUR_USER_TEMPLATE_ID',
+  EMAILJS_TPL_ADMIN:'YOUR_ADMIN_TEMPLATE_ID',
+  ADMIN_NAME:'Por :V',
+  ADMIN_PASS:'1736',
+  PROMPTPAY:'0XX-XXX-XXXX',
+  QR_IMAGE:'qr.png'
+};
+</script>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="page active" id="loginPage">
+  <div class="login-wrap">
+    <div class="login-header"><div style="font-size:40px;margin-bottom:8px">💸</div><h1>Split Pay</h1><p>เลือกชื่อของคุณ</p></div>
+    <div class="card">
+      <div class="section-label">ผู้ใช้งาน</div>
+      <div class="user-grid" id="userGrid"><div style="text-align:center;padding:20px;color:var(--muted);grid-column:1/-1">กำลังโหลด...</div></div>
+      <div class="section-label">แอดมิน</div>
+      <button class="user-btn admin-btn" onclick="showAdminLogin()">🔐 Por :V (Admin)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal" style="max-width:320px">
+    <h2>🔐 Admin Login</h2><label>รหัสผ่าน</label>
+    <input type="password" id="adminPassInput" placeholder="••••" onkeydown="if(event.key==='Enter')checkAdminPass()">
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('adminModal')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="checkAdminPass()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER PAGE -->
+<div class="page" id="userPage">
+  <div style="max-width:480px;margin:0 auto">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div><h1 id="userGreet">สวัสดี</h1><p style="margin:0">รายการที่ต้องจ่าย</p></div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">ออก</button>
+    </div>
+    <div id="userLists"></div>
+    <div class="card" style="background:#f0f7f4;border-color:#b7e4c7">
+      <div class="total-row"><span>ยอดรวมทั้งหมด</span><span id="userTotal" style="color:var(--accent)">฿0.00</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="max-width:360px">
+    <h2 style="text-align:center;margin-bottom:4px">💳 ชำระเงิน</h2>
+    <div style="text-align:center;padding:16px 0">
+      <img id="qrImg" src="" alt="QR" class="qr-img">
+      <div class="copy-row"><span>Promptpay : <b id="ppNumber"></b></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
+      <p id="payAmountText" style="font-size:20px;font-weight:600;color:var(--accent);margin:8px 0"></p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('payModal')">ปิด</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmPaid()">✅ จ่ายแล้ว</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="adminPage">
+  <div style="max-width:680px;margin:0 auto">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div><h1>⚙️ Admin</h1><p style="margin:0">จัดการรายการทั้งหมด</p></div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">ออก</button>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-tab active" id="navOverview" onclick="adminTab('overview')">ภาพรวม</div>
+      <div class="nav-tab" id="navUsers" onclick="adminTab('users')">ผู้ใช้</div>
+      <div class="nav-tab" id="navSubscriptions" onclick="adminTab('subscriptions')">Subscriptions</div>
+      <div class="nav-tab" id="navAddlist" onclick="adminTab('addlist')">+ เพิ่มรายการ</div>
+    </div>
+    <div id="tab-overview"></div>
+    <div id="tab-users" style="display:none">
+      <div class="card"><h2>เพิ่มผู้ใช้ใหม่</h2>
+        <div class="grid2"><div><label>ชื่อ</label><input id="newUserName" placeholder="ชื่อผู้ใช้"></div><div><label>อีเมล</label><input id="newUserEmail" type="email" placeholder="email@example.com"></div></div>
+        <button class="btn btn-primary" onclick="addUser()">เพิ่มผู้ใช้</button>
+      </div>
+      <div class="card"><h2>ผู้ใช้ทั้งหมด</h2><div id="usersList"></div></div>
+    </div>
+    <div id="tab-subscriptions" style="display:none"><div id="subList"></div></div>
+    <div id="tab-addlist" style="display:none">
+      <div class="card"><h2>เลือกประเภทรายการ</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="showAddForm('normal')">📋 Normal Divide</button>
+          <button class="btn btn-outline" onclick="showAddForm('advance')">🧮 Advance Divide</button>
+          <button class="btn btn-outline" onclick="showAddForm('subscription')">🔄 Subscription</button>
+        </div>
+      </div>
+      <div id="addFormContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let STATE={users:[],lists:[],payments:[],currentUser:null,isAdmin:false,payingListId:null};
+let calcData={},subItemCount=0;
+emailjs.init(CFG.EMAILJS_KEY);
+document.getElementById('ppNumber').textContent=CFG.PROMPTPAY;
+loadData();
+
+async function loadData(){
+  try{
+    if(CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL')throw'demo';
+    const r=await gsFetch({action:'GET'});
+    STATE.users=r.users||[];STATE.lists=r.lists||[];STATE.payments=r.payments||[];
+  }catch(e){STATE.users=[];STATE.lists=[];STATE.payments=[];}
+  renderLogin();
+}
+async function gsFetch(data){const r=await fetch(CFG.SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return r.json();}
+async function gsWrite(data){try{await gsFetch(data);}catch(e){}}
+
+function renderLogin(){
+  const g=document.getElementById('userGrid');
+  g.innerHTML=STATE.users.length?STATE.users.map(u=>`<button class="user-btn" onclick="loginUser('${u.id}')">${u.name}</button>`).join(''):'<p style="grid-column:1/-1;color:var(--muted);font-size:13px;text-align:center">ยังไม่มีผู้ใช้</p>';
+}
+function loginUser(uid){const u=STATE.users.find(x=>x.id===uid);if(!u)return;STATE.currentUser=u;STATE.isAdmin=false;showPage('userPage');renderUserPage();}
+function showAdminLogin(){document.getElementById('adminPassInput').value='';openModal('adminModal');setTimeout(()=>document.getElementById('adminPassInput').focus(),100);}
+function checkAdminPass(){if(document.getElementById('adminPassInput').value===CFG.ADMIN_PASS){closeModal('adminModal');STATE.isAdmin=true;STATE.currentUser={id:'admin',name:CFG.ADMIN_NAME};showPage('adminPage');renderAdmin();}else toast('รหัสผ่านไม่ถูกต้อง ❌');}
+function logout(){STATE.currentUser=null;STATE.isAdmin=false;showPage('loginPage');loadData();}
+
+function renderUserPage(){
+  document.getElementById('userGreet').textContent='สวัสดี, '+STATE.currentUser.name;
+  const uid=STATE.currentUser.id;
+  const myL=STATE.lists.filter(l=>l.members&&l.members.includes(uid));
+  let total=0;
+  document.getElementById('userLists').innerHTML=myL.map(l=>{
+    const amt=getUserAmount(l,uid);total+=amt;const paid=isPaid(l.id,uid);
+    const subs=l.subItems&&l.subItems.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${l.subItems.filter(s=>s.members&&s.members.includes(uid)).map(s=>`<div class="summary-row"><span style="color:var(--muted)">${s.name}</span><span>฿${fmt(s.price/s.members.length)}</span></div>`).join('')}</div>`:'';
+    return`<div class="card"><div class="flex-between"><div><div style="font-weight:500;font-size:15px">${l.name}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${typeTH(l.type)}</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(amt)}</div>${paid?'<span class="paid-badge">จ่ายแล้ว ✓</span>':`<button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="openPay('${l.id}',${amt})">จ่ายเงิน</button>`}</div></div>${subs}</div>`;
+  }).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มีรายการ</div>';
+  document.getElementById('userTotal').textContent='฿'+fmt(total);
+}
+function getUserAmount(l,uid){return l.userAmounts&&l.userAmounts[uid]!==undefined?Number(l.userAmounts[uid]):0;}
+function isPaid(lid,uid){return STATE.payments.some(p=>p.listId===lid&&p.userId===uid&&p.status==='paid');}
+function openPay(lid,amt){STATE.payingListId=lid;document.getElementById('qrImg').src=CFG.QR_IMAGE;document.getElementById('payAmountText').textContent='฿'+fmt(amt);openModal('payModal');}
+function copyPP(){navigator.clipboard.writeText(CFG.PROMPTPAY).then(()=>toast('คัดลอกแล้ว ✓'));}
+async function confirmPaid(){
+  const uid=STATE.currentUser.id,lid=STATE.payingListId;
+  if(isPaid(lid,uid)){toast('บันทึกแล้ว');closeModal('payModal');return;}
+  const pmt={id:'p'+Date.now(),listId:lid,userId:uid,status:'paid',time:new Date().toISOString()};
+  STATE.payments.push(pmt);
+  await gsWrite({action:'addPayment',...pmt});
+  const list=STATE.lists.find(l=>l.id===lid);
+  notifyAdmin(`${STATE.currentUser.name} จ่ายเงินรายการ "${list?.name||lid}" แล้ว`);
+  closeModal('payModal');toast('บันทึกการจ่ายแล้ว ✅');renderUserPage();
+}
+
+function renderAdmin(){renderAdminOverview();renderUsersList();renderSubList();}
+function adminTab(tab){
+  ['overview','users','subscriptions','addlist'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'':'none';
+    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active',t===tab);
+  });
+}
+function renderAdminOverview(){
+  document.getElementById('tab-overview').innerHTML=STATE.users.map(u=>{
+    const myL=STATE.lists.filter(l=>l.members&&l.members.includes(u.id));
+    let total=0;myL.forEach(l=>total+=getUserAmount(l,u.id));
+    const pc=myL.filter(l=>isPaid(l.id,u.id)).length;
+    return`<div class="card"><div class="flex-between"><div><div style="font-weight:500;font-size:15px">${u.name}</div><div style="font-size:12px;color:var(--muted)">${u.email}</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:600;color:var(--accent)">฿${fmt(total)}</div><div style="font-size:12px;color:var(--muted)">${pc}/${myL.length} รายการ</div></div></div>${myL.length?`<div style="margin-top:10px">${myL.map(l=>{const a=getUserAmount(l,u.id),pd=isPaid(l.id,u.id);return`<div class="amount-row"><span>${l.name}</span><div style="display:flex;gap:6px;align-items:center"><span style="font-weight:500">฿${fmt(a)}</span><span class="badge ${pd?'badge-green':'badge-red'}">${pd?'จ่ายแล้ว':'ค้างจ่าย'}</span></div></div>`;}).join('')}</div>`:''}</div>`;
+  }).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มีผู้ใช้</div>';
+}
+function renderUsersList(){
+  document.getElementById('usersList').innerHTML=STATE.users.map(u=>`<div class="list-item"><div><div style="font-weight:500">${u.name}</div><div style="font-size:12px;color:var(--muted)">${u.email}</div></div><button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}')">ลบ</button></div>`).join('')||'<p style="color:var(--muted);text-align:center;padding:16px">ยังไม่มีผู้ใช้</p>';
+}
+async function addUser(){
+  const name=document.getElementById('newUserName').value.trim(),email=document.getElementById('newUserEmail').value.trim();
+  if(!name||!email){toast('กรอกชื่อและอีเมล');return;}
+  const u={id:'u'+Date.now(),name,email};STATE.users.push(u);
+  await gsWrite({action:'addUser',...u});
+  document.getElementById('newUserName').value='';document.getElementById('newUserEmail').value='';
+  renderUsersList();renderLogin();renderAdminOverview();toast('เพิ่มผู้ใช้แล้ว ✓');
+}
+async function removeUser(uid){
+  if(!confirm('ลบผู้ใช้นี้?'))return;
+  STATE.users=STATE.users.filter(u=>u.id!==uid);
+  await gsWrite({action:'removeUser',id:uid});
+  renderUsersList();renderLogin();renderAdminOverview();toast('ลบผู้ใช้แล้ว');
+}
+function renderSubList(){
+  const subs=STATE.lists.filter(l=>l.type==='subscription');
+  document.getElementById('subList').innerHTML=subs.map(s=>`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${s.name}</div><div style="font-size:12px;color:var(--muted)">฿${fmt(s.total)}/เดือน · ${(s.members||[]).length} คน</div></div><button class="btn btn-primary btn-sm" onclick="newMonthSub('${s.id}')">+ เดือนใหม่</button></div><div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px">${(s.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);return u?`<span class="tag">${u.name}</span>`:''}).join('')}</div></div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มี Subscription</div>';
+}
+async function newMonthSub(sid){
+  const sub=STATE.lists.find(l=>l.id===sid);if(!sub)return;
+  const now=new Date().toLocaleDateString('th-TH',{month:'short',year:'numeric'});
+  const nl={...sub,id:'l'+Date.now(),name:`${sub.name} (${now})`,type:'normal'};
+  STATE.lists.push(nl);
+  await gsWrite({action:'addList',...nl,userAmounts:JSON.stringify(nl.userAmounts),members:JSON.stringify(nl.members),subItems:JSON.stringify(nl.subItems||[])});
+  notifyUsers(nl);renderAdmin();toast('เพิ่มรอบเดือนใหม่แล้ว ✓');
+}
+
+function showAddForm(type){
+  subItemCount=0;
+  const cbU=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="cb_${u.id}" value="${u.id}"><label for="cb_${u.id}" style="cursor:pointer;font-size:14px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
+  const cbBox=`<div style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px">${cbU}</div>`;
+  if(type==='normal'){
+    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>📋 Normal Divide</h2><label>ชื่อรายการ</label><input id="fn_name" placeholder="เช่น ค่าอาหาร"><label>ยอดรวม (฿)</label><input id="fn_total" type="number" placeholder="0" min="0"><label>เลือกผู้ใช้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcNormal()">คำนวณ</button><div id="fn_result"></div><div id="fn_send" style="display:none;margin-top:8px"><button class="btn btn-primary btn-full" onclick="sendList('normal')">📤 ส่งรายการ</button></div></div>`;
+  }
+  if(type==='advance'){
+    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🧮 Advance Divide</h2><label>ชื่อรายการ</label><input id="fa_name" placeholder="เช่น ทริปเที่ยว"><label>ยอดรวม (฿)</label><input id="fa_total" type="number" placeholder="0" min="0"><label>รายการย่อย</label><div id="fa_subs"></div><button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="addSubItem()">+ เพิ่มรายการย่อย</button><div><button class="btn btn-outline" onclick="calcAdvance()">คำนวณ</button></div><div id="fa_result"></div><div id="fa_send" style="display:none;margin-top:8px"><button class="btn btn-primary btn-full" onclick="sendList('advance')">📤 ส่งรายการ</button></div></div>`;
+    addSubItem();
+  }
+  if(type==='subscription'){
+    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🔄 Subscription</h2><label>ชื่อ Subscription</label><input id="fs_name" placeholder="เช่น Netflix"><label>ยอดรวมต่อเดือน (฿)</label><input id="fs_total" type="number" placeholder="0" min="0"><label>เลือกผู้ใช้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcSub()">คำนวณ</button><div id="fs_result"></div><div id="fs_send" style="display:none;margin-top:8px"><button class="btn btn-primary btn-full" onclick="sendList('subscription')">💾 บันทึก Subscription</button></div></div>`;
+  }
+}
+function addSubItem(){
+  subItemCount++;const id=subItemCount;
+  const cbU=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="sic_${id}_${u.id}" value="${u.id}"><label for="sic_${id}_${u.id}" style="cursor:pointer;font-size:13px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
+  const div=document.createElement('div');div.id='sub_'+id;div.style.cssText='border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px';
+  div.innerHTML=`<div class="flex-between" style="margin-bottom:8px"><span style="font-size:13px;font-weight:500;color:var(--muted)">รายการย่อย #${id}</span><button class="btn btn-outline btn-sm" onclick="this.closest('div[id]').remove()">ลบ</button></div><div class="grid2"><div><label>ชื่อ</label><input class="si_name" placeholder="ชื่อรายการย่อย"></div><div><label>ราคา (฿)</label><input class="si_price" type="number" placeholder="0"></div></div><label>ผู้ที่ต้องจ่าย</label><div style="border:1px solid var(--border);border-radius:6px;padding:6px">${cbU}</div>`;
+  document.getElementById('fa_subs').appendChild(div);
+}
+function getChecked(pfx){return Array.from(document.querySelectorAll(`input[id^="${pfx}"]:checked`)).map(x=>x.value);}
+
+function calcNormal(){
+  const name=document.getElementById('fn_name').value.trim(),total=Number(document.getElementById('fn_total').value),members=getChecked('cb_');
+  if(!name||!total||!members.length){toast('กรอกข้อมูลให้ครบ');return;}
+  const each=total/members.length,userAmounts={};members.forEach(uid=>userAmounts[uid]=each);
+  calcData={name,total,type:'normal',members,userAmounts};
+  const rows=members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" value="${each.toFixed(2)}" step="0.01" onchange="calcData.userAmounts['${uid}']=Number(this.value)"></div>`;}).join('');
+  document.getElementById('fn_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${rows}</div>`;
+  document.getElementById('fn_send').style.display='block';
+}
+function calcAdvance(){
+  const name=document.getElementById('fa_name').value.trim(),total=Number(document.getElementById('fa_total').value);
+  if(!name){toast('กรอกชื่อรายการ');return;}
+  const subs=[];
+  document.querySelectorAll('[id^="sub_"]').forEach(div=>{
+    const n=div.querySelector('.si_name').value.trim(),p=Number(div.querySelector('.si_price').value),sid=div.id.replace('sub_','');
+    const m=Array.from(div.querySelectorAll(`[id^="sic_${sid}_"]:checked`)).map(x=>x.value);
+    if(n&&p&&m.length)subs.push({name:n,price:p,members:m});
+  });
+  if(!subs.length){toast('เพิ่มรายการย่อยให้ครบ');return;}
+  const subTotal=subs.reduce((a,s)=>a+s.price,0),userAmounts={};
+  subs.forEach(s=>s.members.forEach(uid=>{userAmounts[uid]=(userAmounts[uid]||0)+s.price/s.members.length;}));
+  const allM=Object.keys(userAmounts),match=Math.abs(subTotal-(total||subTotal))<1;
+  calcData={name,total:total||subTotal,type:'advance',members:allM,userAmounts,subItems:subs};
+  const rows=allM.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><span style="font-weight:500">฿${fmt(userAmounts[uid])}</span></div>`;}).join('');
+  document.getElementById('fa_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${rows}<div class="divider"></div><div class="summary-row"><span>ผลรวมรายการย่อย</span><span>฿${fmt(subTotal)}</span></div>${total?`<div class="summary-row"><span>ยอดรวมที่ระบุ</span><span>฿${fmt(total)}</span></div>`:''}<div style="font-size:13px;margin-top:6px;padding:8px;border-radius:6px;background:${match?'#d8f3dc':'#fff3cd'};color:${match?'#1b4332':'#856404'}">${match?'✅ ยอดตรงกัน':'⚠️ ยอดต่างกัน ฿'+fmt(Math.abs(subTotal-(total||subTotal)))}</div></div>`;
+  document.getElementById('fa_send').style.display='block';
+}
+function calcSub(){
+  const name=document.getElementById('fs_name').value.trim(),total=Number(document.getElementById('fs_total').value),members=getChecked('cb_');
+  if(!name||!total||!members.length){toast('กรอกข้อมูลให้ครบ');return;}
+  const each=total/members.length,userAmounts={};members.forEach(uid=>userAmounts[uid]=each);
+  calcData={name,total,type:'subscription',members,userAmounts};
+  const rows=members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" value="${each.toFixed(2)}" step="0.01" onchange="calcData.userAmounts['${uid}']=Number(this.value)"></div>`;}).join('');
+  document.getElementById('fs_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${rows}</div>`;
+  document.getElementById('fs_send').style.display='block';
+}
+async function sendList(type){
+  if(!calcData.name){toast('ข้อมูลไม่ครบ');return;}
+  const list={id:'l'+Date.now(),...calcData};STATE.lists.push(list);
+  await gsWrite({action:'addList',...list,userAmounts:JSON.stringify(list.userAmounts),members:JSON.stringify(list.members),subItems:JSON.stringify(list.subItems||[])});
+  notifyUsers(list);toast('ส่งรายการแล้ว ✅');
+  document.getElementById('addFormContainer').innerHTML='';calcData={};
+  adminTab('overview');renderAdmin();
+}
+
+function notifyUsers(list){
+  if(CFG.EMAILJS_KEY==='YOUR_EMAILJS_PUBLIC_KEY')return;
+  (list.members||[]).forEach(uid=>{const u=STATE.users.find(x=>x.id===uid);if(!u?.email)return;emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{to_email:u.email,to_name:u.name,list_name:list.name,amount:'฿'+fmt(getUserAmount(list,uid))});});
+}
+function notifyAdmin(msg){
+  if(CFG.EMAILJS_KEY==='YOUR_EMAILJS_PUBLIC_KEY')return;
+  const admin=STATE.users.find(u=>u.name===CFG.ADMIN_NAME);if(!admin?.email)return;
+  emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_ADMIN,{to_email:admin.email,message:msg});
+}
+function fmt(n){return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function typeTH(t){return{normal:'แบ่งปกติ',advance:'แบ่งละเอียด',subscription:'Subscription'}[t]||t;}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>
