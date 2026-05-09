@@ -20,7 +20,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 .btn{cursor:pointer;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;border:none;font-family:inherit;transition:opacity .15s}
 .btn:hover{opacity:.85}.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-primary{background:var(--accent);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-danger{background:var(--danger);color:#fff}.btn-warning{background:#e67e22;color:#fff}.btn-sm{padding:6px 12px;font-size:13px}.btn-full{width:100%}
+.btn-primary{background:var(--accent);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-danger{background:var(--danger);color:#fff}.btn-sm{padding:6px 12px;font-size:13px}.btn-full{width:100%}
 .flex-between{display:flex;justify-content:space-between;align-items:center}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500}
 .badge-green{background:#d8f3dc;color:#1b4332}.badge-red{background:#ffe0e0;color:#7b1d1d}.badge-yellow{background:#fff3cd;color:#856404}
@@ -41,17 +41,14 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 .pay-list-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}.pay-list-item:last-child{border-bottom:none}.pay-list-item input[type=checkbox]{width:auto;margin:0;flex-shrink:0}
 .utab-bar{display:flex;gap:6px;margin-bottom:14px}
 .utab{padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--card)}.utab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-/* Loading overlay */
-.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:12px}
 .loading-overlay.show{display:flex}
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Login */
 .login-wrap{width:100%;max-width:380px}
 .login-header{text-align:center;margin-bottom:28px;color:#fff}
 .login-header h1{color:#fff;font-size:28px}
 .login-header p{color:rgba(255,255,255,.7)}
-/* Group/User select */
 #selectPage{background:var(--bg)}
 .select-inner{max-width:420px;margin:0 auto;padding-top:32px}
 .group-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -61,8 +58,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 .user-btn{padding:16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;font-weight:500;text-align:center;transition:all .15s;box-shadow:var(--shadow)}
 .user-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
 .section-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:14px 0 8px}
-/* Peer view */
-.peer-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}.peer-row:last-child{border-bottom:none}
+.peer-row{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--border)}.peer-row:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -70,7 +66,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 const CFG={
   SHEET_URL:'https://script.google.com/macros/s/AKfycbzntqsw5JKDkGs108l6FQRRpqLMWvb19W5PlDwT7A_VfISCmV90aljeEGFar5KcfOGz/exec',
   EMAILJS_KEY:'OJimmjdJNEAG_BMEY',
-  EMAILJS_SERVICE:'service_5755blo',
+  EMAILJS_SERVICE:'service_5755b1o',
   EMAILJS_TPL_USER:'template_kytkrgn',
   EMAILJS_TPL_ADMIN:'template_ae8x5u2',
   ADMIN_NAME:'Por :V',
@@ -90,7 +86,7 @@ const CFG={
     </div>
     <div class="card">
       <button class="btn btn-primary btn-full" style="font-size:16px;padding:14px;margin-bottom:10px" onclick="showPage('selectPage')">เข้าสู่ระบบ →</button>
-      <button class="btn btn-outline btn-full" style="margin-bottom:10px" onclick="showEmailLogin()">📧 เข้าสู่ระบบด้วยอีเมล</button>
+      <button class="btn btn-outline btn-full" style="margin-bottom:10px" onclick="showUsernameLogin()">👤 เข้าสู่ระบบด้วยชื่อ</button>
       <button class="btn btn-outline btn-full" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a" onclick="openModal('adminModal')">🔐 เข้าในฐานะแอดมิน</button>
     </div>
   </div>
@@ -108,15 +104,15 @@ const CFG={
   </div>
 </div>
 
-<!-- Email Login Modal -->
-<div class="modal-overlay" id="emailLoginModal">
+<!-- Username Login Modal -->
+<div class="modal-overlay" id="usernameLoginModal">
   <div class="modal" style="max-width:320px">
-    <h2>📧 เข้าสู่ระบบด้วยอีเมล</h2>
-    <label>อีเมลของคุณ</label>
-    <input type="email" id="emailLoginInput" placeholder="email@example.com" onkeydown="if(event.key==='Enter')loginByEmail()">
+    <h2>👤 เข้าสู่ระบบด้วยชื่อ</h2>
+    <label>ชื่อผู้ใช้</label>
+    <input type="text" id="usernameLoginInput" placeholder="กรอกชื่อของคุณ" onkeydown="if(event.key==='Enter')loginByUsername()">
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="closeModal('emailLoginModal')">ยกเลิก</button>
-      <button class="btn btn-primary" style="flex:1" onclick="loginByEmail()">เข้าสู่ระบบ</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('usernameLoginModal')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="loginByUsername()">เข้าสู่ระบบ</button>
     </div>
   </div>
 </div>
@@ -168,15 +164,15 @@ const CFG={
 <div class="modal-overlay" id="payModal">
   <div class="modal">
     <h2>💳 แจ้งชำระเงิน</h2>
-    <div id="payQrSection" style="text-align:center;margin-bottom:12px">
+    <div style="text-align:center;margin-bottom:12px">
       <img id="qrImg" src="" alt="QR" class="qr-preview" style="display:none">
       <div class="copy-row"><span>Promptpay : <b id="ppNumber">-</b></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
     </div>
     <div class="divider"></div>
     <label style="margin-bottom:6px">เลือกรายการที่ต้องการจ่าย</label>
     <div id="payListSelect" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:10px;max-height:200px;overflow-y:auto"></div>
-    <label>ยอดรวมที่เลือก</label>
-    <input type="number" id="payInputAmt" placeholder="0.00" min="0" step="0.01" oninput="onManualAmt()">
+    <label>ยอดรวมที่เลือก (฿)</label>
+    <input type="number" id="payInputAmt" placeholder="0.00" min="0" step="0.01">
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px" id="payTotalRemain"></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" style="flex:1" onclick="closeModal('payModal')">ยกเลิก</button>
@@ -249,7 +245,6 @@ const CFG={
         </div>
       </div>
       <div id="addFormContainer"></div>
-      <!-- Queue & Summary -->
       <div id="queueSection" style="display:none">
         <div class="card" style="background:#f0f7f4;border-color:#b7e4c7">
           <h2>📋 รายการที่รอส่ง</h2>
@@ -275,22 +270,11 @@ const CFG={
 let STATE={users:[],lists:[],payments:[],pendingPays:[],groups:[],currentUser:null,isAdmin:false,currentGroup:null,settings:{promptpay:'',qr:''},editingListId:null};
 let calcData={},subItemCount=0,listQueue=[];
 const USE_LOCAL=CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL';
-
 emailjs.init(CFG.EMAILJS_KEY);
 
-// ── Loading ──
-function showLoading(msg='กำลังโหลด...'){
-  const o=document.getElementById('loadingOverlay');
-  o.querySelector('div:last-child').textContent=msg;
-  o.classList.add('show');
-  document.querySelectorAll('.btn').forEach(b=>b.disabled=true);
-}
-function hideLoading(){
-  document.getElementById('loadingOverlay').classList.remove('show');
-  document.querySelectorAll('.btn').forEach(b=>b.disabled=false);
-}
+function showLoading(msg){document.getElementById('loadingOverlay').querySelector('div:last-child').textContent=msg||'กำลังโหลด...';document.getElementById('loadingOverlay').classList.add('show');document.querySelectorAll('.btn').forEach(b=>b.disabled=true);}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');document.querySelectorAll('.btn').forEach(b=>b.disabled=false);}
 
-// ── DB ──
 async function loadData(){
   showLoading('กำลังโหลดข้อมูล...');
   if(USE_LOCAL){
@@ -302,11 +286,11 @@ async function loadData(){
       STATE.groups=JSON.parse(localStorage.getItem('sp_groups')||'[]');
       STATE.settings=JSON.parse(localStorage.getItem('sp_settings')||'{"promptpay":"","qr":""}');
     }catch(e){}
-  } else {
+  }else{
     try{
       const r=await fetch(CFG.SHEET_URL+'?action=GET',{redirect:'follow'});
       const data=await r.json();
-      STATE.users=data.users||[];
+      STATE.users=(data.users||[]).map(parseUserJSON);
       STATE.lists=(data.lists||[]).map(parseListJSON);
       STATE.payments=data.payments||[];
       STATE.pendingPays=data.pendingPays||[];
@@ -320,10 +304,8 @@ async function loadData(){
 
 async function gsWrite(data){
   if(USE_LOCAL){saveLocal();return;}
-  try{
-    await fetch(CFG.SHEET_URL+'?action=write&data='+encodeURIComponent(JSON.stringify(data)),{redirect:'follow'});
-    saveLocal();
-  }catch(e){saveLocal();}
+  try{await fetch(CFG.SHEET_URL+'?action=write&data='+encodeURIComponent(JSON.stringify(data)),{redirect:'follow'});saveLocal();}
+  catch(e){saveLocal();}
 }
 
 function saveLocal(){
@@ -335,23 +317,17 @@ function saveLocal(){
   localStorage.setItem('sp_settings',JSON.stringify(STATE.settings));
 }
 
-function parseListJSON(l){
-  ['userAmounts','members','subItems'].forEach(k=>{
-    if(typeof l[k]==='string'){try{l[k]=JSON.parse(l[k]);}catch(e){}}
-  });return l;
-}
+function parseListJSON(l){['userAmounts','members','subItems'].forEach(k=>{if(typeof l[k]==='string'){try{l[k]=JSON.parse(l[k]);}catch(e){}}});return l;}
+function parseUserJSON(u){try{if(typeof u.groups==='string')u.groups=JSON.parse(u.groups);}catch(e){u.groups=[];}if(!u.groups)u.groups=[];return u;}
 
 // ── Auth ──
 function renderGroupGrid(){
   const g=document.getElementById('groupGrid');
-  if(!STATE.groups.length){
-    g.innerHTML='<p style="grid-column:1/-1;color:var(--muted);font-size:13px;text-align:center">ยังไม่มีกลุ่ม<br>แอดมินเพิ่มได้</p>';
-    return;
-  }
+  if(!STATE.groups.length){g.innerHTML='<p style="grid-column:1/-1;color:var(--muted);font-size:13px;text-align:center">ยังไม่มีกลุ่ม</p>';return;}
   g.innerHTML=STATE.groups.map(gr=>`<button class="group-btn" onclick="selectGroup('${gr.id}')">
-    <div style="font-size:24px;margin-bottom:4px">${gr.icon||'👥'}</div>
-    <div>${gr.name}</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:2px">${getGroupMembers(gr.id).length} คน</div>
+    <div style="font-size:28px;margin-bottom:6px">${gr.icon||'👥'}</div>
+    <div style="font-weight:600">${gr.name}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">${getGroupMembers(gr.id).length} คน</div>
   </button>`).join('');
 }
 
@@ -367,14 +343,8 @@ function selectGroup(gid){
   document.getElementById('userSelect').style.display='';
 }
 
-function backToGroups(){
-  document.getElementById('groupSelect').style.display='';
-  document.getElementById('userSelect').style.display='none';
-}
-
-function getGroupMembers(gid){
-  return STATE.users.filter(u=>u.groups&&u.groups.includes(gid));
-}
+function backToGroups(){document.getElementById('groupSelect').style.display='';document.getElementById('userSelect').style.display='none';}
+function getGroupMembers(gid){return STATE.users.filter(u=>u.groups&&u.groups.includes(gid));}
 
 function loginUser(uid){
   const u=STATE.users.find(x=>x.id===uid);if(!u)return;
@@ -382,26 +352,21 @@ function loginUser(uid){
   showPage('userPage');userTab('active');
 }
 
-function showEmailLogin(){openModal('emailLoginModal');setTimeout(()=>document.getElementById('emailLoginInput').focus(),100);}
+function showUsernameLogin(){openModal('usernameLoginModal');setTimeout(()=>document.getElementById('usernameLoginInput').focus(),100);}
 
-function loginByEmail(){
-  const email=document.getElementById('emailLoginInput').value.trim().toLowerCase();
-  const u=STATE.users.find(x=>x.email&&x.email.toLowerCase()===email);
-  if(!u){toast('ไม่พบอีเมลนี้ในระบบ ❌');return;}
-  closeModal('emailLoginModal');
+function loginByUsername(){
+  const name=document.getElementById('usernameLoginInput').value.trim().toLowerCase();
+  const u=STATE.users.find(x=>x.name&&x.name.toLowerCase()===name);
+  if(!u){toast('ไม่พบชื่อนี้ในระบบ ❌');return;}
+  closeModal('usernameLoginModal');
   STATE.currentUser=u;STATE.isAdmin=false;
-  // find first group
-  if(u.groups&&u.groups.length){
-    const gr=STATE.groups.find(x=>x.id===u.groups[0]);
-    if(gr)STATE.currentGroup=gr;
-  }
+  if(u.groups&&u.groups.length){const gr=STATE.groups.find(x=>x.id===u.groups[0]);if(gr)STATE.currentGroup=gr;}
   showPage('userPage');userTab('active');
 }
 
 function checkAdminPass(){
   if(document.getElementById('adminPassInput').value===CFG.ADMIN_PASS){
-    closeModal('adminModal');STATE.isAdmin=true;
-    STATE.currentUser={id:'admin',name:CFG.ADMIN_NAME};
+    closeModal('adminModal');STATE.isAdmin=true;STATE.currentUser={id:'admin',name:CFG.ADMIN_NAME};
     showPage('adminPage');renderAdmin();
   }else toast('รหัสผ่านไม่ถูกต้อง ❌');
 }
@@ -425,74 +390,54 @@ function renderActiveList(){
   document.getElementById('userGreet').textContent='สวัสดี, '+STATE.currentUser.name;
   document.getElementById('userGroupLabel').textContent=STATE.currentGroup?'กลุ่ม: '+STATE.currentGroup.name:'';
   const uid=STATE.currentUser.id;
-  const myL=STATE.lists.filter(l=>{
-    if(!l.members||!l.members.includes(uid))return false;
-    return Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))>0;
-  });
+  const myL=STATE.lists.filter(l=>l.members&&l.members.includes(uid)&&Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))>0);
   let total=0;
   document.getElementById('userActiveLists').innerHTML=myL.map(l=>{
-    const orig=getUserAmount(l,uid),paid=getPaidAmount(l.id,uid),rem=Math.max(0,orig-paid);
-    total+=rem;
-    const pend=STATE.pendingPays.find(p=>p.userId===uid&&p.status==='pending'&&(p.listId===l.id||(tryParseArr(p.listIds)).includes(l.id)));
+    const orig=getUserAmount(l,uid),paid=getPaidAmount(l.id,uid),rem=Math.max(0,orig-paid);total+=rem;
+    const pend=STATE.pendingPays.find(p=>p.userId===uid&&p.status==='pending'&&(p.listId===l.id||tryParseArr(p.listIds).includes(l.id)));
     const subs=l.subItems&&l.subItems.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${l.subItems.filter(s=>s.members&&s.members.includes(uid)).map(s=>`<div class="summary-row"><span style="color:var(--muted);font-size:13px">${s.name}</span><span style="font-size:13px">฿${fmt(s.price/s.members.length)}</span></div>`).join('')}</div>`:'';
-    return`<div class="card"><div class="flex-between">
-      <div><div style="font-weight:500;font-size:15px">${l.name}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${typeTH(l.type)}</div></div>
-      <div style="text-align:right">
-        <div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(rem)}</div>
-        ${paid>0?`<div style="font-size:11px;color:var(--muted)">จ่ายแล้ว ฿${fmt(paid)}</div>`:''}
-        ${pend?`<span class="badge badge-yellow" style="display:block;margin-top:4px">รออนุมัติ ฿${fmt(pend.amount)}</span>`:''}
-      </div>
-    </div>${subs}</div>`;
+    return`<div class="card"><div class="flex-between"><div><div style="font-weight:500;font-size:15px">${l.name}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${typeTH(l.type)}</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(rem)}</div>${paid>0?`<div style="font-size:11px;color:var(--muted)">จ่ายแล้ว ฿${fmt(paid)}</div>`:''}${pend?`<span class="badge badge-yellow" style="display:block;margin-top:4px">รออนุมัติ ฿${fmt(pend.amount)}</span>`:''}</div></div>${subs}</div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">🎉 ไม่มีรายการค้างจ่าย</div>';
   const hasPending=STATE.pendingPays.some(p=>p.userId===uid&&p.status==='pending');
   document.getElementById('payAllWrap').innerHTML=myL.length&&!hasPending
-    ?`<div class="card" style="background:#f0f7f4;border-color:#b7e4c7">
-        <div class="total-row" style="margin-bottom:12px"><span>ยอดค้างรวม</span><span style="color:var(--accent)">฿${fmt(total)}</span></div>
-        <button class="btn btn-primary btn-full" style="font-size:15px;padding:12px" onclick="openPayModal()">💳 แจ้งชำระเงิน</button>
-      </div>`
+    ?`<div class="card" style="background:#f0f7f4;border-color:#b7e4c7"><div class="total-row" style="margin-bottom:12px"><span>ยอดค้างรวม</span><span style="color:var(--accent)">฿${fmt(total)}</span></div><button class="btn btn-primary btn-full" style="font-size:15px;padding:12px" onclick="openPayModal()">💳 แจ้งชำระเงิน</button></div>`
     :(hasPending?`<div class="card" style="background:#fff3cd;border-color:#ffc107;text-align:center;padding:12px"><span class="badge badge-yellow">มีรายการรออนุมัติจาก Admin</span></div>`:'');
 }
 
 function renderHistoryList(){
   const uid=STATE.currentUser.id;
-  const doneL=STATE.lists.filter(l=>{
-    if(!l.members||!l.members.includes(uid))return false;
-    const orig=getUserAmount(l,uid),paid=getPaidAmount(l.id,uid);
-    return paid>0&&Math.max(0,orig-paid)<=0;
-  });
+  const doneL=STATE.lists.filter(l=>{if(!l.members||!l.members.includes(uid))return false;const orig=getUserAmount(l,uid),paid=getPaidAmount(l.id,uid);return paid>0&&Math.max(0,orig-paid)<=0;});
   document.getElementById('userHistoryLists').innerHTML=doneL.length
-    ?doneL.map(l=>{
-        const paid=getPaidAmount(l.id,uid);
-        const pmts=STATE.payments.filter(p=>p.listId===l.id&&p.userId===uid&&p.status==='confirmed');
-        return`<div class="card"><div class="flex-between">
-          <div><div style="font-weight:500">${l.name}</div><div style="font-size:12px;color:var(--muted)">${typeTH(l.type)}</div></div>
-          <span class="badge badge-green">ชำระแล้ว ฿${fmt(paid)}</span>
-        </div>
-        ${pmts.map(p=>`<div class="summary-row" style="margin-top:6px"><span style="color:var(--muted);font-size:12px">${new Date(p.time).toLocaleDateString('th-TH')}</span><span style="font-size:12px">฿${fmt(p.amount)}</span></div>`).join('')}
-        </div>`;
-      }).join('')
+    ?doneL.map(l=>{const paid=getPaidAmount(l.id,uid);const pmts=STATE.payments.filter(p=>p.listId===l.id&&p.userId===uid&&p.status==='confirmed');return`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${l.name}</div><div style="font-size:12px;color:var(--muted)">${typeTH(l.type)}</div></div><span class="badge badge-green">฿${fmt(paid)}</span></div>${pmts.map(p=>`<div class="summary-row" style="margin-top:6px"><span style="color:var(--muted);font-size:12px">${new Date(p.time).toLocaleDateString('th-TH')}</span><span style="font-size:12px">฿${fmt(p.amount)}</span></div>`).join('')}</div>`;}).join('')
     :'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มีประวัติ</div>';
 }
 
 function renderPeers(){
   const uid=STATE.currentUser.id;
   const u=STATE.users.find(x=>x.id===uid);
-  const myGroups=(u?.groups||[]);
+  const myGroups=u?.groups||[];
   if(!myGroups.length){document.getElementById('userPeers').innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่ได้อยู่ในกลุ่มใด</div>';return;}
   let html='';
   myGroups.forEach(gid=>{
     const gr=STATE.groups.find(x=>x.id===gid);if(!gr)return;
     const members=getGroupMembers(gid).filter(m=>m.id!==uid);
-    html+=`<div class="card"><h2>${gr.icon||'👥'} ${gr.name}</h2>
-      ${members.map(m=>{
-        const myL=STATE.lists.filter(l=>l.members&&l.members.includes(m.id));
-        let total=0,paid=0;myL.forEach(l=>{total+=getUserAmount(l,m.id);paid+=getPaidAmount(l.id,m.id);});
-        const rem=Math.max(0,total-paid);
-        return`<div class="peer-row"><span>${m.name}</span><div style="display:flex;gap:6px;align-items:center"><span style="font-weight:500;color:var(--accent)">฿${fmt(rem)}</span><span class="badge ${rem<=0?'badge-green':'badge-red'}">${rem<=0?'ชำระแล้ว':'ค้างจ่าย'}</span></div></div>`;
-      }).join('')}
-    </div>`;
+    html+=`<div class="card"><h2>${gr.icon||'👥'} ${gr.name}</h2>${members.map(m=>{
+      const myL=STATE.lists.filter(l=>l.members&&l.members.includes(m.id));
+      let total=0,totalPaid=0;myL.forEach(l=>{total+=getUserAmount(l,m.id);totalPaid+=getPaidAmount(l.id,m.id);});
+      const rem=Math.max(0,total-totalPaid);
+      const activeLists=myL.filter(l=>Math.max(0,getUserAmount(l,m.id)-getPaidAmount(l.id,m.id))>0);
+      const subDetails=activeLists.map(l=>{
+        const r=Math.max(0,getUserAmount(l,m.id)-getPaidAmount(l.id,m.id));
+        let subHtml='';
+        if(l.subItems&&l.subItems.length){
+          subHtml=l.subItems.filter(s=>s.members&&s.members.includes(m.id)).map(s=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:2px 0 2px 12px"><span>• ${s.name}</span><span>฿${fmt(s.price/s.members.length)}</span></div>`).join('');
+        }
+        return`<div style="padding:4px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${l.name}</span><span style="font-weight:500">฿${fmt(r)}</span></div>${subHtml}</div>`;
+      }).join('');
+      return`<div class="peer-row"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><span style="font-weight:500">${m.name}</span><div style="display:flex;gap:6px;align-items:center"><span style="font-weight:600;color:var(--accent)">฿${fmt(rem)}</span><span class="badge ${rem<=0?'badge-green':'badge-red'}">${rem<=0?'ชำระแล้ว':'ค้างจ่าย'}</span></div></div>${subDetails?`<div style="width:100%;background:#f9f9f7;border-radius:6px;padding:6px 8px;margin-top:4px">${subDetails}</div>`:''}</div>`;
+    }).join('')||'<p style="color:var(--muted);font-size:13px;padding:8px 0">ไม่มีสมาชิกอื่น</p>'}</div>`;
   });
-  document.getElementById('userPeers').innerHTML=html||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีสมาชิกอื่น</div>';
+  document.getElementById('userPeers').innerHTML=html||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีข้อมูล</div>';
 }
 
 function getUserAmount(l,uid){return l.userAmounts&&l.userAmounts[uid]!==undefined?Number(l.userAmounts[uid]):0;}
@@ -504,8 +449,7 @@ function openPayModal(){
   const uid=STATE.currentUser.id;
   const myL=STATE.lists.filter(l=>{
     if(!l.members||!l.members.includes(uid))return false;
-    const rem=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));
-    if(rem<=0)return false;
+    if(Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))<=0)return false;
     return!STATE.pendingPays.find(p=>p.userId===uid&&p.status==='pending'&&(p.listId===l.id||tryParseArr(p.listIds).includes(l.id)));
   });
   document.getElementById('qrImg').src=STATE.settings.qr||'';
@@ -513,11 +457,7 @@ function openPayModal(){
   document.getElementById('ppNumber').textContent=STATE.settings.promptpay||'-';
   document.getElementById('payListSelect').innerHTML=myL.map(l=>{
     const rem=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));
-    return`<div class="pay-list-item">
-      <input type="checkbox" id="pl_${l.id}" value="${l.id}" onchange="updatePayTotal()">
-      <label for="pl_${l.id}" style="flex:1;cursor:pointer;margin:0;color:var(--text)">${l.name}</label>
-      <span style="font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap">฿${fmt(rem)}</span>
-    </div>`;
+    return`<div class="pay-list-item"><input type="checkbox" id="pl_${l.id}" value="${l.id}" onchange="updatePayTotal()"><label for="pl_${l.id}" style="flex:1;cursor:pointer;margin:0;color:var(--text)">${l.name}</label><span style="font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap">฿${fmt(rem)}</span></div>`;
   }).join('')||'<p style="color:var(--muted);font-size:13px;text-align:center;padding:8px">ไม่มีรายการ</p>';
   document.getElementById('payInputAmt').value='';
   document.getElementById('payTotalRemain').textContent='';
@@ -528,13 +468,11 @@ function updatePayTotal(){
   const uid=STATE.currentUser.id;
   const checked=Array.from(document.querySelectorAll('#payListSelect input:checked')).map(x=>x.value);
   if(!checked.length){document.getElementById('payTotalRemain').textContent='';document.getElementById('payInputAmt').value='';return;}
-  let total=0;
-  checked.forEach(lid=>{const l=STATE.lists.find(x=>x.id===lid);if(l)total+=Math.max(0,getUserAmount(l,uid)-getPaidAmount(lid,uid));});
+  let total=0;checked.forEach(lid=>{const l=STATE.lists.find(x=>x.id===lid);if(l)total+=Math.max(0,getUserAmount(l,uid)-getPaidAmount(lid,uid));});
   document.getElementById('payInputAmt').value=total.toFixed(2);
   document.getElementById('payTotalRemain').textContent=`รวม ${checked.length} รายการ = ฿${fmt(total)}`;
 }
 
-function onManualAmt(){}
 function copyPP(){navigator.clipboard.writeText(STATE.settings.promptpay||'').then(()=>toast('คัดลอกแล้ว ✓'));}
 
 async function submitPay(){
@@ -564,52 +502,31 @@ function adminTab(tab){
 }
 
 function renderAdminOverview(){
-  // Active users
   const activeHtml=STATE.users.map(u=>{
     const myL=STATE.lists.filter(l=>l.members&&l.members.includes(u.id));
-    let orig=0,paid=0;myL.forEach(l=>{orig+=getUserAmount(l,u.id);paid+=getPaidAmount(l.id,u.id);});
-    const rem=Math.max(0,orig-paid);
     const activeLists=myL.filter(l=>Math.max(0,getUserAmount(l,u.id)-getPaidAmount(l.id,u.id))>0);
     if(!activeLists.length)return'';
-    return`<div class="card">
-      <div class="flex-between">
-        <div><div style="font-weight:500;font-size:15px">${u.name}</div><div style="font-size:12px;color:var(--muted)">${u.email}</div></div>
-        <div style="text-align:right"><div style="font-size:18px;font-weight:600;color:var(--accent)">฿${fmt(rem)}</div><div style="font-size:11px;color:var(--muted)">จ่ายแล้ว ฿${fmt(paid)}</div></div>
-      </div>
-      <div style="margin-top:10px">${activeLists.map(l=>{
-        const a=getUserAmount(l,u.id),p=getPaidAmount(l.id,u.id),r=Math.max(0,a-p);
-        const pend=STATE.pendingPays.find(x=>x.userId===u.id&&x.status==='pending'&&(x.listId===l.id||tryParseArr(x.listIds).includes(l.id)));
-        return`<div class="amount-row">
-          <span>${l.name}</span>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-weight:500">฿${fmt(r)}</span>
-            ${pend?`<span class="badge badge-yellow">รอ฿${fmt(pend.amount)}</span>`:'<span class="badge badge-red">ค้างจ่าย</span>'}
-            <button class="btn btn-primary btn-sm" onclick="adminManualPay('${u.id}','${l.id}')">✓ อนุมัติ</button>
-          </div>
-        </div>`;
-      }).join('')}</div>
-    </div>`;
+    let orig=0,paid=0;myL.forEach(l=>{orig+=getUserAmount(l,u.id);paid+=getPaidAmount(l.id,u.id);});
+    const rem=Math.max(0,orig-paid);
+    return`<div class="card"><div class="flex-between"><div><div style="font-weight:500;font-size:15px">${u.name}</div><div style="font-size:12px;color:var(--muted)">${u.email}</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:600;color:var(--accent)">฿${fmt(rem)}</div><div style="font-size:11px;color:var(--muted)">จ่ายแล้ว ฿${fmt(paid)}</div></div></div><div style="margin-top:10px">${activeLists.map(l=>{const a=getUserAmount(l,u.id),p=getPaidAmount(l.id,u.id),r=Math.max(0,a-p);const pend=STATE.pendingPays.find(x=>x.userId===u.id&&x.status==='pending'&&(x.listId===l.id||tryParseArr(x.listIds).includes(l.id)));return`<div class="amount-row"><span>${l.name}</span><div style="display:flex;gap:6px;align-items:center"><span style="font-weight:500">฿${fmt(r)}</span>${pend?`<span class="badge badge-yellow">รอ฿${fmt(pend.amount)}</span>`:'<span class="badge badge-red">ค้างจ่าย</span>'}<button class="btn btn-primary btn-sm" onclick="adminManualPay('${u.id}','${l.id}')">✓</button></div></div>`;}).join('')}</div></div>`;
   }).join('');
-  // Paid history
   const paidHtml=STATE.users.map(u=>{
     const myL=STATE.lists.filter(l=>l.members&&l.members.includes(u.id));
-    const doneLists=myL.filter(l=>{const orig=getUserAmount(l,u.id),paid=getPaidAmount(l.id,u.id);return paid>0&&Math.max(0,orig-paid)<=0;});
+    const doneLists=myL.filter(l=>{const p=getPaidAmount(l.id,u.id);return p>0&&Math.max(0,getUserAmount(l,u.id)-p)<=0;});
     if(!doneLists.length)return'';
-    return`<div class="card" style="border-color:#b7e4c7">
-      <div style="font-weight:500;margin-bottom:8px">${u.name}</div>
-      ${doneLists.map(l=>`<div class="summary-row"><span>${l.name}</span><span class="badge badge-green">฿${fmt(getPaidAmount(l.id,u.id))}</span></div>`).join('')}
-    </div>`;
+    return`<div class="card" style="border-color:#b7e4c7"><div style="font-weight:500;margin-bottom:8px">${u.name}</div>${doneLists.map(l=>`<div class="summary-row"><span>${l.name}</span><span class="badge badge-green">฿${fmt(getPaidAmount(l.id,u.id))}</span></div>`).join('')}</div>`;
   }).join('');
   document.getElementById('tab-overview').innerHTML=
-    `<div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">ค้างจ่าย</div>`+
+    `<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase">ค้างจ่าย</div>`+
     (activeHtml||'<div class="card" style="text-align:center;color:var(--muted);padding:24px">ไม่มีรายการค้างจ่าย 🎉</div>')+
-    (paidHtml?`<div style="font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.04em">ชำระแล้ว</div>`+paidHtml:'');
+    (paidHtml?`<div style="font-size:12px;font-weight:600;color:var(--muted);margin:16px 0 8px;text-transform:uppercase">ชำระแล้ว</div>`+paidHtml:'');
 }
 
 async function adminManualPay(uid,lid){
   const l=STATE.lists.find(x=>x.id===lid);if(!l)return;
-  const orig=getUserAmount(l,uid),paid=getPaidAmount(lid,uid),rem=Math.max(0,orig-paid);
-  if(!confirm(`อนุมัติการชำระ ฿${fmt(rem)} ของ ${STATE.users.find(x=>x.id===uid)?.name}?`))return;
+  const rem=Math.max(0,getUserAmount(l,uid)-getPaidAmount(lid,uid));
+  const uname=STATE.users.find(x=>x.id===uid)?.name||uid;
+  if(!confirm(`อนุมัติการชำระ ฿${fmt(rem)} ของ ${uname}?`))return;
   showLoading('กำลังบันทึก...');
   const c={id:'c'+Date.now(),listId:lid,userId:uid,amount:rem,status:'confirmed',time:new Date().toISOString()};
   STATE.payments.push(c);
@@ -621,19 +538,7 @@ function renderPendingTab(){
   const pending=STATE.pendingPays.filter(p=>p.status==='pending');
   document.getElementById('pendingBadge').textContent=pending.length?`(${pending.length})`:'';
   document.getElementById('tab-pending').innerHTML=pending.length
-    ?pending.map(p=>{
-        const u=STATE.users.find(x=>x.id===p.userId);
-        return`<div class="card">
-          <div class="flex-between">
-            <div><div style="font-weight:500">${u?.name||'?'}</div><div style="font-size:13px;color:var(--muted);margin-top:3px">${p.note||p.listId}</div><div style="font-size:11px;color:var(--muted)">${new Date(p.time).toLocaleString('th-TH')}</div></div>
-            <div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(p.amount)}</div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary btn-sm" onclick="confirmPay('${p.id}')">✅ ยืนยัน</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectPay('${p.id}')">❌ ปฏิเสธ</button>
-          </div>
-        </div>`;
-      }).join('')
+    ?pending.map(p=>{const u=STATE.users.find(x=>x.id===p.userId);return`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${u?.name||'?'}</div><div style="font-size:13px;color:var(--muted);margin-top:3px">${p.note||p.listId}</div><div style="font-size:11px;color:var(--muted)">${new Date(p.time).toLocaleString('th-TH')}</div></div><div style="font-size:20px;font-weight:600;color:var(--accent)">฿${fmt(p.amount)}</div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="confirmPay('${p.id}')">✅ ยืนยัน</button><button class="btn btn-danger btn-sm" onclick="rejectPay('${p.id}')">❌ ปฏิเสธ</button></div></div>`;}).join('')
     :'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีรายการรออนุมัติ</div>';
 }
 
@@ -664,31 +569,15 @@ async function rejectPay(pid){
   hideLoading();toast('ปฏิเสธแล้ว');renderAdmin();
 }
 
-// ── Admin Lists Tab ──
 function renderAdminLists(){
-  const html=STATE.lists.map(l=>`<div class="card">
-    <div class="flex-between">
-      <div><div style="font-weight:500">${l.name}</div><div style="font-size:12px;color:var(--muted)">${typeTH(l.type)} · ${(l.members||[]).length} คน · ฿${fmt(l.total||0)}</div></div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-outline btn-sm" onclick="openEditList('${l.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteList('${l.id}')">🗑️</button>
-      </div>
-    </div>
-    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
-      ${(l.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);const r=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));return u?`<span class="tag">${u.name} ฿${fmt(r)}</span>`:''}).join('')}
-    </div>
-  </div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มีรายการ</div>';
-  document.getElementById('tab-lists').innerHTML=html;
+  document.getElementById('tab-lists').innerHTML=STATE.lists.map(l=>`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${l.name}</div><div style="font-size:12px;color:var(--muted)">${typeTH(l.type)} · ${(l.members||[]).length} คน · ฿${fmt(l.total||0)}</div></div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openEditList('${l.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteList('${l.id}')">🗑️</button></div></div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${(l.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);const r=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));return u?`<span class="tag">${u.name} ฿${fmt(r)}</span>`:''}).join('')}</div></div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มีรายการ</div>';
 }
 
 function openEditList(lid){
   const l=STATE.lists.find(x=>x.id===lid);if(!l)return;
   STATE.editingListId=lid;
   document.getElementById('editListName').value=l.name;
-  document.getElementById('editListAmounts').innerHTML=(l.members||[]).map(uid=>{
-    const u=STATE.users.find(x=>x.id===uid);
-    return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" id="ea_${uid}" value="${getUserAmount(l,uid).toFixed(2)}" step="0.01"></div>`;
-  }).join('');
+  document.getElementById('editListAmounts').innerHTML=(l.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" id="ea_${uid}" value="${getUserAmount(l,uid).toFixed(2)}" step="0.01"></div>`;}).join('');
   openModal('editListModal');
 }
 
@@ -696,10 +585,7 @@ async function saveEditList(){
   const l=STATE.lists.find(x=>x.id===STATE.editingListId);if(!l)return;
   showLoading('กำลังบันทึก...');
   l.name=document.getElementById('editListName').value.trim();
-  (l.members||[]).forEach(uid=>{
-    const inp=document.getElementById('ea_'+uid);
-    if(inp)l.userAmounts[uid]=Number(inp.value);
-  });
+  (l.members||[]).forEach(uid=>{const inp=document.getElementById('ea_'+uid);if(inp)l.userAmounts[uid]=Number(inp.value);});
   l.total=Object.values(l.userAmounts||{}).reduce((a,v)=>a+Number(v),0);
   await gsWrite({action:'updateList',id:l.id,name:l.name,total:l.total,userAmounts:JSON.stringify(l.userAmounts)});
   hideLoading();closeModal('editListModal');toast('แก้ไขแล้ว ✅');renderAdmin();
@@ -715,22 +601,28 @@ async function deleteList(lid){
 
 // ── Users ──
 function renderUsersList(){
-  // group checkboxes for add user
   document.getElementById('newUserGroups').innerHTML=STATE.groups.map(g=>`<div class="cb-row"><input type="checkbox" id="nug_${g.id}" value="${g.id}"><label for="nug_${g.id}" style="cursor:pointer;font-size:14px;color:var(--text);margin:0">${g.name}</label></div>`).join('')||'<p style="color:var(--muted);font-size:13px">ยังไม่มีกลุ่ม</p>';
   document.getElementById('usersList').innerHTML=STATE.users.map(u=>`
-    <div class="list-item">
-      <div>
+    <div class="list-item" style="flex-wrap:wrap;gap:8px;align-items:flex-start">
+      <div style="flex:1;min-width:0">
         <div style="font-weight:500">${u.name}</div>
         <div style="font-size:12px;color:var(--muted)">${u.email}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${(u.groups||[]).map(gid=>{const g=STATE.groups.find(x=>x.id===gid);return g?`<span class="tag" style="font-size:11px">${g.name}</span>`:''}).join('')}</div>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+          ${STATE.groups.map(g=>{
+            const inGroup=(u.groups||[]).includes(g.id);
+            return`<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid ${inGroup?'var(--accent)':'var(--border)'};background:${inGroup?'#f0f7f4':'#f5f5f3'}"><input type="checkbox" style="width:auto;margin:0" ${inGroup?'checked':''} onchange="toggleUserGroup('${u.id}','${g.id}',this.checked)">${g.name}</label>`;
+          }).join('')}
+        </div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}')">ลบ</button>
     </div>`).join('')||'<p style="color:var(--muted);text-align:center;padding:16px">ยังไม่มีผู้ใช้</p>';
 }
 
 async function addUser(){
-  const name=document.getElementById('newUserName').value.trim(),email=document.getElementById('newUserEmail').value.trim();
+  const name=document.getElementById('newUserName').value.trim();
+  const email=document.getElementById('newUserEmail').value.trim();
   if(!name||!email){toast('กรอกชื่อและอีเมล');return;}
+  if(STATE.users.some(u=>u.name.toLowerCase()===name.toLowerCase())){toast('ชื่อนี้มีอยู่แล้ว ❌');return;}
   const groups=Array.from(document.querySelectorAll('[id^="nug_"]:checked')).map(x=>x.value);
   showLoading('กำลังเพิ่ม...');
   const u={id:'u'+Date.now(),name,email,groups};
@@ -739,6 +631,15 @@ async function addUser(){
   document.getElementById('newUserName').value='';document.getElementById('newUserEmail').value='';
   document.querySelectorAll('[id^="nug_"]').forEach(x=>x.checked=false);
   hideLoading();renderUsersList();renderGroupGrid();renderAdminOverview();toast('เพิ่มผู้ใช้แล้ว ✓');
+}
+
+async function toggleUserGroup(uid,gid,add){
+  const u=STATE.users.find(x=>x.id===uid);if(!u)return;
+  if(!u.groups)u.groups=[];
+  if(add){if(!u.groups.includes(gid))u.groups.push(gid);}
+  else{u.groups=u.groups.filter(x=>x!==gid);}
+  await gsWrite({action:'updateUserGroups',id:uid,groups:JSON.stringify(u.groups)});
+  renderGroupGrid();toast(add?'เพิ่มเข้ากลุ่มแล้ว':'ลบออกจากกลุ่มแล้ว');
 }
 
 async function removeUser(uid){
@@ -753,13 +654,7 @@ async function removeUser(uid){
 function renderGroupsList(){
   document.getElementById('groupsList').innerHTML=STATE.groups.map(g=>{
     const members=getGroupMembers(g.id);
-    return`<div class="list-item">
-      <div>
-        <div style="font-weight:500">${g.icon||'👥'} ${g.name}</div>
-        <div style="font-size:12px;color:var(--muted)">${members.map(m=>m.name).join(', ')||'ไม่มีสมาชิก'}</div>
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}')">ลบ</button>
-    </div>`;
+    return`<div class="list-item"><div><div style="font-weight:500">${g.icon||'👥'} ${g.name}</div><div style="font-size:12px;color:var(--muted)">${members.map(m=>m.name).join(', ')||'ไม่มีสมาชิก'}</div></div><button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}')">ลบ</button></div>`;
   }).join('')||'<p style="color:var(--muted);text-align:center;padding:16px">ยังไม่มีกลุ่ม</p>';
 }
 
@@ -777,13 +672,8 @@ async function addGroup(){
 async function deleteGroup(gid){
   if(!confirm('ลบกลุ่มนี้? ผู้ใช้ที่อยู่เฉพาะกลุ่มนี้จะถูกลบด้วย'))return;
   showLoading('กำลังลบ...');
-  // remove exclusive users
-  const toDelete=STATE.users.filter(u=>{
-    const g=u.groups||[];
-    return g.includes(gid)&&g.filter(x=>x!==gid).length===0;
-  });
+  const toDelete=STATE.users.filter(u=>{const g=u.groups||[];return g.includes(gid)&&g.filter(x=>x!==gid).length===0;});
   toDelete.forEach(u=>{STATE.users=STATE.users.filter(x=>x.id!==u.id);});
-  // remove group from other users
   STATE.users.forEach(u=>{if(u.groups)u.groups=u.groups.filter(x=>x!==gid);});
   STATE.groups=STATE.groups.filter(x=>x.id!==gid);
   await gsWrite({action:'deleteGroup',id:gid,deleteUsers:JSON.stringify(toDelete.map(u=>u.id))});
@@ -826,17 +716,19 @@ async function saveSettings(){
   hideLoading();toast('บันทึกแล้ว ✓');
 }
 
-// ── Add List (with Queue) ──
+// ── Add List ──
 function showAddForm(type){
   subItemCount=0;
   const cbU=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="cb_${u.id}" value="${u.id}"><label for="cb_${u.id}" style="cursor:pointer;font-size:14px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
   const cbBox=`<div style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px">${cbU}</div>`;
+  const grpOpts=STATE.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  const grpSel=`<label>กำหนดให้กลุ่ม (ไม่บังคับ)</label><select id="fa_group" style="margin-bottom:12px"><option value="">-- ไม่ระบุ --</option>${grpOpts}</select>`;
   if(type==='normal')
-    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>📋 Normal Divide</h2><label>ชื่อรายการ</label><input id="fn_name" placeholder="เช่น ค่าอาหาร"><label>ยอดรวม (฿)</label><input id="fn_total" type="number" placeholder="0"><label>ผู้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcNormal()">คำนวณ</button><div id="fn_result"></div><div id="fn_send" style="display:none;margin-top:8px;display:flex;gap:8px"><button class="btn btn-outline" style="flex:1" onclick="addToQueue('normal')">+ เพิ่มใน Queue</button><button class="btn btn-primary" style="flex:1" onclick="sendList('normal')">📤 ส่งเลย</button></div></div>`;
+    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>📋 Normal Divide</h2><label>ชื่อรายการ</label><input id="fn_name" placeholder="เช่น ค่าอาหาร"><label>ยอดรวม (฿)</label><input id="fn_total" type="number" placeholder="0"><label>ผู้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcNormal()">คำนวณ</button><div id="fn_result"></div><div id="fn_send" style="display:none;margin-top:8px;gap:8px;"><button class="btn btn-outline" style="flex:1" onclick="addToQueue('normal')">+ Queue</button><button class="btn btn-primary" style="flex:1" onclick="sendList('normal')">📤 ส่งเลย</button></div></div>`;
   if(type==='advance')
-    {document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🧮 Advance Divide</h2><label>ชื่อรายการ</label><input id="fa_name" placeholder="เช่น ทริปเที่ยว"><label>ยอดรวม (฿)</label><input id="fa_total" type="number" placeholder="0"><label>รายการย่อย</label><div id="fa_subs"></div><button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="addSubItem()">+ เพิ่มรายการย่อย</button><br><button class="btn btn-outline" onclick="calcAdvance()">คำนวณ</button><div id="fa_result"></div><div id="fa_send" style="display:none;margin-top:8px;display:flex;gap:8px"><button class="btn btn-outline" style="flex:1" onclick="addToQueue('advance')">+ เพิ่มใน Queue</button><button class="btn btn-primary" style="flex:1" onclick="sendList('advance')">📤 ส่งเลย</button></div></div>`;addSubItem();}
+    {document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🧮 Advance Divide</h2><label>ชื่อรายการ</label><input id="fa_name" placeholder="เช่น ทริปเที่ยว"><label>ยอดรวม (฿)</label><input id="fa_total" type="number" placeholder="0">${grpSel}<label>รายการย่อย</label><div id="fa_subs"></div><button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="addSubItem()">+ เพิ่มรายการย่อย</button><br><button class="btn btn-outline" onclick="calcAdvance()">คำนวณ</button><div id="fa_result"></div><div id="fa_send" style="display:none;margin-top:8px;gap:8px;"><button class="btn btn-outline" style="flex:1" onclick="addToQueue('advance')">+ Queue</button><button class="btn btn-primary" style="flex:1" onclick="sendList('advance')">📤 ส่งเลย</button></div></div>`;addSubItem();}
   if(type==='subscription')
-    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🔄 Subscription</h2><label>ชื่อ</label><input id="fs_name" placeholder="เช่น Netflix"><label>ยอดต่อเดือน (฿)</label><input id="fs_total" type="number" placeholder="0"><label>ผู้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcSub()">คำนวณ</button><div id="fs_result"></div><div id="fn_send" style="display:none;margin-top:8px"><button class="btn btn-primary btn-full" onclick="sendList('subscription')">💾 บันทึก</button></div></div>`;
+    document.getElementById('addFormContainer').innerHTML=`<div class="card"><h2>🔄 Subscription</h2><label>ชื่อ</label><input id="fs_name" placeholder="เช่น Netflix"><label>ยอดต่อเดือน (฿)</label><input id="fs_total" type="number" placeholder="0"><label>ผู้ที่ต้องจ่าย</label>${cbBox}<button class="btn btn-outline" onclick="calcSub()">คำนวณ</button><div id="fs_result"></div><div id="fs_send" style="display:none;margin-top:8px"><button class="btn btn-primary btn-full" onclick="sendList('subscription')">💾 บันทึก</button></div></div>`;
 }
 
 function addSubItem(){
@@ -855,7 +747,7 @@ function calcNormal(){
   const each=total/members.length,ua={};members.forEach(uid=>ua[uid]=each);
   calcData={name,total,type:'normal',members,userAmounts:ua};
   document.getElementById('fn_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" value="${each.toFixed(2)}" step="0.01" onchange="calcData.userAmounts['${uid}']=Number(this.value)"></div>`;}).join('')}</div>`;
-  document.getElementById('fn_send').style.display='flex';
+  document.getElementById('fn_send').style.cssText='display:flex;margin-top:8px;gap:8px';
 }
 
 function calcAdvance(){
@@ -871,9 +763,10 @@ function calcAdvance(){
   const subTotal=subs.reduce((a,s)=>a+s.price,0),ua={};
   subs.forEach(s=>s.members.forEach(uid=>{ua[uid]=(ua[uid]||0)+s.price/s.members.length;}));
   const allM=Object.keys(ua),match=Math.abs(subTotal-(total||subTotal))<1;
-  calcData={name,total:total||subTotal,type:'advance',members:allM,userAmounts:ua,subItems:subs};
+  const groupId=document.getElementById('fa_group')?.value||'';
+  calcData={name,total:total||subTotal,type:'advance',members:allM,userAmounts:ua,subItems:subs,groupId};
   document.getElementById('fa_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${allM.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><span>฿${fmt(ua[uid])}</span></div>`;}).join('')}<div class="divider"></div><div style="font-size:13px;padding:6px 8px;border-radius:6px;background:${match?'#d8f3dc':'#fff3cd'};color:${match?'#1b4332':'#856404'}">${match?'✅ ยอดตรงกัน':'⚠️ ยอดต่างกัน'}</div></div>`;
-  document.getElementById('fa_send').style.display='flex';
+  document.getElementById('fa_send').style.cssText='display:flex;margin-top:8px;gap:8px';
 }
 
 function calcSub(){
@@ -882,28 +775,20 @@ function calcSub(){
   const each=total/members.length,ua={};members.forEach(uid=>ua[uid]=each);
   calcData={name,total,type:'subscription',members,userAmounts:ua};
   document.getElementById('fs_result').innerHTML=`<div style="margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:8px">${members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" value="${each.toFixed(2)}" step="0.01" onchange="calcData.userAmounts['${uid}']=Number(this.value)"></div>`;}).join('')}</div>`;
-  document.getElementById('fn_send').style.display='block';
+  document.getElementById('fs_send').style.display='block';
 }
 
 function addToQueue(type){
   if(!calcData.name){toast('คำนวณก่อน');return;}
   listQueue.push({...calcData,id:'lq'+Date.now()});
-  calcData={};
-  document.getElementById('addFormContainer').innerHTML='';
+  calcData={};document.getElementById('addFormContainer').innerHTML='';
   renderQueue();toast('เพิ่มใน Queue แล้ว ✓');
 }
 
 function renderQueue(){
   if(!listQueue.length){document.getElementById('queueSection').style.display='none';return;}
   document.getElementById('queueSection').style.display='';
-  document.getElementById('queueList').innerHTML=listQueue.map((l,i)=>`
-    <div class="summary-row">
-      <span>${l.name} <span style="color:var(--muted);font-size:12px">(${typeTH(l.type)})</span></span>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-weight:500">฿${fmt(l.total)}</span>
-        <button class="btn btn-danger btn-sm" onclick="removeFromQueue(${i})">×</button>
-      </div>
-    </div>`).join('');
+  document.getElementById('queueList').innerHTML=listQueue.map((l,i)=>`<div class="summary-row"><span>${l.name} <span style="color:var(--muted);font-size:12px">(${typeTH(l.type)})</span></span><div style="display:flex;gap:8px;align-items:center"><span style="font-weight:500">฿${fmt(l.total)}</span><button class="btn btn-danger btn-sm" onclick="removeFromQueue(${i})">×</button></div></div>`).join('');
 }
 
 function removeFromQueue(i){listQueue.splice(i,1);renderQueue();}
@@ -911,16 +796,15 @@ function removeFromQueue(i){listQueue.splice(i,1);renderQueue();}
 async function sendAllQueued(){
   if(!listQueue.length){toast('ไม่มีรายการใน Queue');return;}
   showLoading('กำลังส่ง...');
-  for(const list of listQueue){
-    const l={...list,id:'l'+Date.now()};
+  for(const item of listQueue){
+    const l={...item,id:'l'+Date.now()};
     STATE.lists.push(l);
     await gsWrite({action:'addList',id:l.id,name:l.name,type:l.type,total:l.total,members:JSON.stringify(l.members),userAmounts:JSON.stringify(l.userAmounts),subItems:JSON.stringify(l.subItems||[])});
   }
-  // notify users with all lists at once
   notifyUsersMultipleLists(listQueue);
   listQueue=[];
   hideLoading();document.getElementById('queueSection').style.display='none';
-  toast(`ส่งแล้ว ✅`);adminTab('overview');renderAdmin();
+  toast('ส่งทั้งหมดแล้ว ✅');adminTab('overview');renderAdmin();
 }
 
 async function sendList(type){
@@ -935,29 +819,18 @@ async function sendList(type){
 }
 
 // ── Email ──
-function buildAllUnpaidSummary(uid, newLists){
+function buildAllUnpaidSummary(uid,newLists){
   const allUnpaid=STATE.lists.filter(l=>l.members&&l.members.includes(uid)&&Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))>0);
-  let lines=[];
-  allUnpaid.forEach(l=>{
-    const r=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));
-    const isNew=newLists.some(nl=>nl.id===l.id);
-    lines.push(`${isNew?'🆕 ':''}${l.name}: ฿${fmt(r)}`);
-  });
+  const lines=allUnpaid.map(l=>{const r=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));const isNew=newLists.some(nl=>nl.id===l.id);return`${isNew?'🆕 ':''}${l.name}: ฿${fmt(r)}`;});
   const total=allUnpaid.reduce((a,l)=>a+Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid)),0);
-  return lines.join('\n')+`\n${'─'.repeat(20)}\nยอดรวมทั้งหมด: ฿${fmt(total)}`;
+  return lines.join('\n')+`\n${'─'.repeat(20)}\nยอดรวม: ฿${fmt(total)}`;
 }
 
 function notifyUsersNewList(list){
   if(CFG.EMAILJS_KEY==='YOUR_EMAILJS_PUBLIC_KEY')return;
   (list.members||[]).forEach(uid=>{
     const u=STATE.users.find(x=>x.id===uid);if(!u?.email)return;
-    const summary=buildAllUnpaidSummary(uid,[list]);
-    emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{
-      to_email:u.email,to_name:u.name,
-      list_name:list.name,amount:'฿'+fmt(getUserAmount(list,uid)),
-      list_type:typeTH(list.type),details:summary,
-      promptpay:STATE.settings.promptpay||'-'
-    });
+    emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{to_email:u.email,to_name:u.name,list_name:list.name,amount:'฿'+fmt(getUserAmount(list,uid)),list_type:typeTH(list.type),details:buildAllUnpaidSummary(uid,[list]),promptpay:STATE.settings.promptpay||'-'});
   });
 }
 
@@ -967,14 +840,7 @@ function notifyUsersMultipleLists(lists){
   allMembers.forEach(uid=>{
     const u=STATE.users.find(x=>x.id===uid);if(!u?.email)return;
     const myNew=lists.filter(l=>l.members&&l.members.includes(uid));
-    const summary=buildAllUnpaidSummary(uid,myNew);
-    const newNames=myNew.map(l=>l.name).join(', ');
-    emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{
-      to_email:u.email,to_name:u.name,
-      list_name:newNames,amount:'฿'+fmt(myNew.reduce((a,l)=>a+getUserAmount(l,uid),0)),
-      list_type:'รายการใหม่หลายรายการ',details:summary,
-      promptpay:STATE.settings.promptpay||'-'
-    });
+    emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{to_email:u.email,to_name:u.name,list_name:myNew.map(l=>l.name).join(', '),amount:'฿'+fmt(myNew.reduce((a,l)=>a+getUserAmount(l,uid),0)),list_type:'รายการใหม่',details:buildAllUnpaidSummary(uid,myNew),promptpay:STATE.settings.promptpay||'-'});
   });
 }
 
@@ -986,13 +852,7 @@ function notifyAdmin(msg){
 
 function notifyUserConfirmed(u,note,amount){
   if(CFG.EMAILJS_KEY==='YOUR_EMAILJS_PUBLIC_KEY')return;
-  const summary=buildAllUnpaidSummary(u.id,[]);
-  emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{
-    to_email:u.email,to_name:u.name,list_name:note,
-    amount:'฿'+fmt(amount),list_type:'ยืนยันการชำระแล้ว ✅',
-    details:'Admin ยืนยันแล้ว ✅\n\nยอดค้างจ่ายที่เหลือ:\n'+summary,
-    promptpay:''
-  });
+  emailjs.send(CFG.EMAILJS_SERVICE,CFG.EMAILJS_TPL_USER,{to_email:u.email,to_name:u.name,list_name:note,amount:'฿'+fmt(amount),list_type:'ยืนยันการชำระแล้ว ✅',details:'Admin ยืนยันแล้ว\n\nยอดค้างที่เหลือ:\n'+buildAllUnpaidSummary(u.id,[]),promptpay:''});
 }
 
 // ── Utils ──
