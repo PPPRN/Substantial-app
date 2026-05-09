@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Split Pay</title>
+<title>ทวงหนี้</title>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{--bg:#f7f7f5;--card:#fff;--border:#e5e5e0;--text:#1a1a1a;--muted:#888;--accent:#2d6a4f;--danger:#c0392b;--host:#7c3aed;--radius:12px;--shadow:0 1px 4px rgba(0,0,0,.07)}
@@ -85,7 +85,7 @@ const CFG={
   <div class="login-wrap">
     <div class="login-header">
       <div style="font-size:52px;margin-bottom:8px">💸</div>
-      <h1>Split Pay</h1><p>แอปหารค่าใช้จ่าย</p>
+      <h1>ทวงหนี้ 💀</h1><p>แอปหารค่าใช้จ่าย</p>
     </div>
     <div class="card">
       <button class="btn btn-primary btn-full" style="font-size:16px;padding:14px;margin-bottom:10px" onclick="showPage('selectPage')">เข้าสู่ระบบ →</button>
@@ -540,7 +540,7 @@ function renderAdmin(mode){
   const isHost=mode==='host';
   const h=STATE.currentHost;
   document.getElementById('adminTitle').textContent=isHost?`🏠 ${h.name}`:'⚙️ Admin';
-  document.getElementById('adminSubtitle').textContent=isHost?'Host Dashboard':'Split Pay Admin';
+  document.getElementById('adminSubtitle').textContent=isHost?'Host Dashboard':'ทวงหนี้ Admin';
 
   const tabs=isHost
     ?[['overview','ภาพรวม'],['pending','รออนุมัติ <span id="pendingBadge"></span>'],['addlist','+ เพิ่มรายการ'],['usersgroups','ผู้ใช้ & กลุ่ม']]
@@ -721,7 +721,7 @@ function renderUsersGroups(mode){
         <div style="font-weight:500">${u.name} ${u.addedById?`<span class="host-badge">Host</span>`:''}</div>
         <div style="font-size:12px;color:var(--muted)">${u.email}</div>
         <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
-          ${STATE.groups.map(g=>{const inGroup=(u.groups||[]).includes(g.id);const canEdit=!isHost||addedByHost;return canEdit?`<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid ${inGroup?'var(--accent)':'var(--border)'};background:${inGroup?'#f0f7f4':'#f5f5f3'}"><input type="checkbox" style="width:auto;margin:0" ${inGroup?'checked':''} onchange="toggleUserGroup('${u.id}','${g.id}',this.checked,'${mode}')">${g.name}</label>`:`<span class="tag" style="${inGroup?'background:#f0f7f4;border:1px solid var(--accent)':''}">${g.name}</span>`;}).join('')}
+          ${STATE.groups.map(g=>{const inGroup=(u.groups||[]).includes(g.id);const canEdit=true;return canEdit?`<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid ${inGroup?'var(--accent)':'var(--border)'};background:${inGroup?'#f0f7f4':'#f5f5f3'}"><input type="checkbox" style="width:auto;margin:0" ${inGroup?'checked':''} onchange="toggleUserGroup('${u.id}','${g.id}',this.checked,'${mode}')">${g.name}</label>`:`<span class="tag" style="${inGroup?'background:#f0f7f4;border:1px solid var(--accent)':''}">${g.name}</span>`;}).join('')}
         </div>
       </div>
       ${canDelete?`<button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}','${mode}')">ลบ</button>`:''}
@@ -732,7 +732,7 @@ function renderUsersGroups(mode){
     <div class="card">
       <h2>เพิ่มกลุ่มใหม่</h2>
       <label>ชื่อกลุ่ม</label><input id="newGroupName" placeholder="เช่น บ้าน, ที่ทำงาน">
-      ${!isHost?`<button class="btn btn-primary" onclick="addGroup('${mode}')">เพิ่มกลุ่ม</button>`:'<button class="btn btn-outline btn-sm" disabled>เฉพาะ Admin เพิ่มกลุ่มได้</button>'}
+      <button class="btn btn-primary" onclick="addGroup('${mode}')">เพิ่มกลุ่ม</button>
     </div>
     <div class="card"><h2>กลุ่มทั้งหมด</h2><div id="groupsList">${groupsHtml}</div></div>
     <div class="card">
