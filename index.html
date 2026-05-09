@@ -206,10 +206,12 @@ const CFG={
       <div class="utab active" id="utab-active" onclick="userTab('active')">ค้างจ่าย</div>
       <div class="utab" id="utab-history" onclick="userTab('history')">ประวัติ</div>
       <div class="utab" id="utab-peers" onclick="userTab('peers')">กลุ่ม</div>
+      <div class="utab" id="utab-creditors" onclick="userTab('creditors')">เจ้าหนี้</div>
     </div>
     <div id="userActiveLists"></div>
     <div id="userHistoryLists" style="display:none"></div>
     <div id="userPeers" style="display:none"></div>
+    <div id="userCreditors" style="display:none"></div>
     <div id="payAllWrap" style="margin-top:4px"></div>
   </div>
 </div>
@@ -220,7 +222,7 @@ const CFG={
     <h2>💳 แจ้งชำระเงิน</h2>
     <div style="text-align:center;margin-bottom:12px">
       <img id="qrImg" src="" alt="QR" class="qr-preview" style="display:none">
-      <div class="copy-row"><span>Promptpay : <b id="ppNumber">-</b></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
+      <div class="copy-row"><span><span id="ppBankLabel">Promptpay :</span> <b id="ppNumber">-</b><span id="ppAccountName" style="color:var(--muted);font-size:12px"></span></span><button class="btn btn-outline btn-sm" onclick="copyPP()">คัดลอก</button></div>
     </div>
     <div class="divider"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -253,7 +255,7 @@ const CFG={
 </div>
 
 <script>
-let STATE={users:[],lists:[],payments:[],pendingPays:[],groups:[],hosts:[],currentUser:null,isAdmin:false,isHost:false,currentHost:null,currentGroup:null,settings:{promptpay:'',qr:''},editingListId:null,editingSubId:null,editSubData:null};
+let STATE={users:[],lists:[],payments:[],pendingPays:[],groups:[],hosts:[],currentUser:null,isAdmin:false,isHost:false,currentHost:null,currentGroup:null,settings:{promptpay:'',qr:'',bankType:'promptpay'},editingListId:null,editingSubId:null,editSubData:null};
 let calcData={},subItemCount=0,listQueue=[];
 const USE_LOCAL=CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL';
 emailjs.init(CFG.EMAILJS_KEY);
@@ -409,15 +411,17 @@ function logout(){
 
 // ── User Page ──
 function userTab(tab){
-  ['active','history','peers'].forEach(t=>{
-    document.getElementById('utab-'+t).classList.toggle('active',t===tab);
-    const el=document.getElementById(t==='active'?'userActiveLists':t==='history'?'userHistoryLists':'userPeers');
+  ['active','history','peers','creditors'].forEach(t=>{
+    document.getElementById('utab-'+t)?.classList.toggle('active',t===tab);
+    const ids={active:'userActiveLists',history:'userHistoryLists',peers:'userPeers',creditors:'userCreditors'};
+    const el=document.getElementById(ids[t]);
     if(el)el.style.display=t===tab?'':'none';
   });
   document.getElementById('payAllWrap').style.display=tab==='active'?'':'none';
   if(tab==='active')renderActiveList();
   else if(tab==='history')renderHistoryList();
-  else renderPeers();
+  else if(tab==='peers')renderPeers();
+  else if(tab==='creditors')renderCreditors();
 }
 
 function renderActiveList(){
@@ -471,6 +475,40 @@ function renderPeers(){
   });
   document.getElementById('userPeers').innerHTML=html||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีข้อมูล</div>';
 }
+function renderCreditors(){
+  const uid=STATE.currentUser.id;
+  const el=document.getElementById('userCreditors');if(!el)return;
+  // group lists by who added them
+  const creditorMap={};
+  STATE.lists.filter(l=>l.members&&l.members.includes(uid)&&Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))>0).forEach(l=>{
+    const key=l.addedById||'admin';
+    if(!creditorMap[key])creditorMap[key]={name:l.addedBy||CFG.ADMIN_NAME,lists:[],paymentCfg:getPaymentCfgForList(l)};
+    creditorMap[key].lists.push(l);
+  });
+  const keys=Object.keys(creditorMap);
+  if(!keys.length){el.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:32px">ไม่มีเจ้าหนี้ 🎉</div>';return;}
+  el.innerHTML=keys.map(key=>{
+    const c=creditorMap[key];
+    const total=c.lists.reduce((a,l)=>a+Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid)),0);
+    const cfg=c.paymentCfg||{};
+    const bankLabel=getBankLabel(cfg.bankType||'promptpay');
+    return`<div class="card">
+      <div class="flex-between" style="margin-bottom:10px">
+        <div><div style="font-weight:600;font-size:16px">${c.name}</div><div style="font-size:12px;color:var(--muted)">เจ้าหนี้</div></div>
+        <div style="font-size:20px;font-weight:700;color:var(--danger)">฿${fmt(total)}</div>
+      </div>
+      ${c.lists.map(l=>{const r=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));return`<div class="summary-row"><span style="font-size:13px">${l.name}</span><span style="font-weight:500">฿${fmt(r)}</span></div>`;}).join('')}
+      <div class="divider"></div>
+      <div style="background:#f5f5f3;border-radius:8px;padding:10px;font-size:13px">
+        ${cfg.qr?`<img src="${cfg.qr}" style="max-width:140px;display:block;margin:0 auto 8px;border-radius:8px;border:1px solid var(--border)">`:'' }
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>${bankLabel}: <b>${cfg.promptpay||'-'}</b>${cfg.accountName?` <span style="color:var(--muted)">(${cfg.accountName})</span>`:''}</span>
+          <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${(cfg.promptpay||'').replace(/'/g,"\\'")}').then(()=>toast('คัดลอกแล้ว ✓'))">คัดลอก</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function getUserAmount(l,uid){return l.userAmounts&&l.userAmounts[uid]!==undefined?Number(l.userAmounts[uid]):0;}
 function getPaidAmount(lid,uid){return STATE.payments.filter(p=>p.listId===lid&&p.userId===uid&&p.status==='confirmed').reduce((a,p)=>a+Number(p.amount),0);}
@@ -478,6 +516,14 @@ function tryParseArr(s){try{return JSON.parse(s||'[]');}catch(e){return[];}}
 function isListFullyPaid(l){return(l.members||[]).length>0&&(l.members||[]).every(uid=>Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))<=0);}
 
 // ── Pay Modal ──
+function getPaymentCfgForList(list){
+  if(!list)return STATE.settings||{};
+  if(list.addedById){
+    const host=STATE.hosts.find(h=>h.id===list.addedById);
+    if(host?.paymentCfg)return host.paymentCfg;
+  }
+  return STATE.settings||{};
+}
 function openPayModal(){
   const uid=STATE.currentUser.id;
   const myL=STATE.lists.filter(l=>{
@@ -485,9 +531,15 @@ function openPayModal(){
     if(Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid))<=0)return false;
     return!STATE.pendingPays.find(p=>p.userId===uid&&p.status==='pending'&&(p.listId===l.id||tryParseArr(p.listIds).includes(l.id)));
   });
-  document.getElementById('qrImg').src=STATE.settings.qr||'';
-  document.getElementById('qrImg').style.display=STATE.settings.qr?'block':'none';
-  document.getElementById('ppNumber').textContent=STATE.settings.promptpay||'-';
+  // determine payment details from list's addedById
+  const firstLid=myL[0]?.id;
+  const firstList=STATE.lists.find(x=>x.id===firstLid);
+  const paymentCfg=getPaymentCfgForList(firstList);
+  document.getElementById('qrImg').src=paymentCfg.qr||'';
+  document.getElementById('qrImg').style.display=paymentCfg.qr?'block':'none';
+  document.getElementById('ppNumber').textContent=paymentCfg.promptpay||'-';
+  document.getElementById('ppBankLabel').textContent=getBankLabel(paymentCfg.bankType||'promptpay')+':';
+  document.getElementById('ppAccountName').textContent=paymentCfg.accountName?` (${paymentCfg.accountName})`:'';
   document.getElementById('selectAllPay').checked=false;
   document.getElementById('payListSelect').innerHTML=myL.map(l=>{
     const rem=Math.max(0,getUserAmount(l,uid)-getPaidAmount(l.id,uid));
@@ -512,7 +564,7 @@ function updatePayTotal(){
   document.getElementById('selectAllPay').checked=checked.length===document.querySelectorAll('.payItemCb').length;
 }
 
-function copyPP(){navigator.clipboard.writeText(STATE.settings.promptpay||'').then(()=>toast('คัดลอกแล้ว ✓'));}
+function copyPP(){navigator.clipboard.writeText(document.getElementById('ppNumber').textContent||'').then(()=>toast('คัดลอกแล้ว ✓'));}
 
 async function submitPay(){
   const uid=STATE.currentUser.id;
@@ -543,7 +595,7 @@ function renderAdmin(mode){
   document.getElementById('adminSubtitle').textContent=isHost?'Host Dashboard':'ทวงหนี้ Admin';
 
   const tabs=isHost
-    ?[['overview','ภาพรวม'],['pending','รออนุมัติ <span id="pendingBadge"></span>'],['addlist','+ เพิ่มรายการ'],['usersgroups','ผู้ใช้ & กลุ่ม']]
+    ?[['overview','ภาพรวม'],['pending','รออนุมัติ <span id="pendingBadge"></span>'],['addlist','+ เพิ่มรายการ'],['usersgroups','ผู้ใช้ & กลุ่ม'],['settings','⚙️ ตั้งค่า']]
     :[['overview','ภาพรวม'],['pending','รออนุมัติ <span id="pendingBadge"></span>'],['lists','รายการ'],['usersgroups','ผู้ใช้ & กลุ่ม'],['subscriptions','Subs'],['addlist','+ เพิ่ม'],['hostmgmt','จัดการ Host'],['settings','⚙️ ตั้งค่า']];
 
   document.getElementById('adminNavBar').innerHTML=tabs.map(([id,label],i)=>`<div class="nav-tab ${i===0?'active':''}" id="nav_${id}" onclick="adminTab('${id}','${mode}')">${label}</div>`).join('');
@@ -850,26 +902,70 @@ async function confirmSubMonth(){
 // ── Settings ──
 function renderSettings(){
   const el=document.getElementById('tab_settings');if(!el)return;
+  const cfg=STATE.isHost?(STATE.currentHost.paymentCfg||{}):(STATE.settings||{});
   el.innerHTML=`<div class="card"><h2>💳 การชำระเงิน</h2>
-    <label>หมายเลข PromptPay</label><input id="cfgPromptpay" placeholder="0XX-XXX-XXXX" value="${STATE.settings.promptpay||''}">
+    <label>ประเภทบัญชี</label>
+    <select id="cfgBankType" onchange="updateBankLabel()" style="margin-bottom:8px">
+      <option value="promptpay" ${(cfg.bankType||'promptpay')==='promptpay'?'selected':''}>PromptPay</option>
+      <option value="kbank" ${cfg.bankType==='kbank'?'selected':''}>กสิกรไทย (KBank)</option>
+      <option value="scb" ${cfg.bankType==='scb'?'selected':''}>ไทยพาณิชย์ (SCB)</option>
+      <option value="bbl" ${cfg.bankType==='bbl'?'selected':''}>กรุงเทพ (BBL)</option>
+      <option value="ktb" ${cfg.bankType==='ktb'?'selected':''}>กรุงไทย (KTB)</option>
+      <option value="bay" ${cfg.bankType==='bay'?'selected':''}>กรุงศรี (BAY)</option>
+      <option value="ttb" ${cfg.bankType==='ttb'?'selected':''}>ทหารไทยธนชาต (TTB)</option>
+      <option value="gsb" ${cfg.bankType==='gsb'?'selected':''}>ออมสิน (GSB)</option>
+      <option value="other" ${cfg.bankType==='other'?'selected':''}>อื่นๆ</option>
+    </select>
+    <label id="cfgAccountLabel">${getBankLabel(cfg.bankType||'promptpay')}</label>
+    <input id="cfgPromptpay" placeholder="หมายเลข/เลขบัญชี" value="${cfg.promptpay||''}">
+    <label>ชื่อบัญชี (ไม่บังคับ)</label>
+    <input id="cfgAccountName" placeholder="ชื่อบัญชี" value="${cfg.accountName||''}">
     <label>อัปโหลดรูป QR Code</label>
     <input type="file" id="cfgQrFile" accept="image/*" onchange="previewQR(this)">
-    ${STATE.settings.qr?`<img src="${STATE.settings.qr}" class="qr-preview" id="cfgQrPreview">`:'<img id="cfgQrPreview" style="display:none" class="qr-preview">'}
+    ${cfg.qr?`<img src="${cfg.qr}" class="qr-preview" id="cfgQrPreview">`:'<img id="cfgQrPreview" style="display:none" class="qr-preview">'}
     <button class="btn btn-primary" onclick="saveSettings()">บันทึก</button>
   </div>`;
+}
+
+function getBankLabel(type){
+  return{promptpay:'หมายเลข PromptPay',kbank:'เลขบัญชี KBank',scb:'เลขบัญชี SCB',bbl:'เลขบัญชี BBL',ktb:'เลขบัญชี KTB',bay:'เลขบัญชี BAY',ttb:'เลขบัญชี TTB',gsb:'เลขบัญชี GSB',other:'เลขบัญชี'}[type]||'เลขบัญชี';
+}
+
+function updateBankLabel(){
+  const type=document.getElementById('cfgBankType').value;
+  const label=document.getElementById('cfgAccountLabel');
+  if(label)label.textContent=getBankLabel(type);
 }
 
 function previewQR(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=e=>{STATE.settings.qr=e.target.result;const img=document.getElementById('cfgQrPreview');if(img){img.src=e.target.result;img.style.display='block';}};
+  reader.onload=e=>{
+    const data=e.target.result;
+    if(STATE.isHost){if(!STATE.currentHost.paymentCfg)STATE.currentHost.paymentCfg={};STATE.currentHost.paymentCfg.qr=data;}
+    else{STATE.settings.qr=data;}
+    const img=document.getElementById('cfgQrPreview');if(img){img.src=data;img.style.display='block';}
+  };
   reader.readAsDataURL(file);
 }
 
 async function saveSettings(){
   showLoading('กำลังบันทึก...');
-  STATE.settings.promptpay=document.getElementById('cfgPromptpay').value.trim();
-  await gsWrite({action:'saveSettings',promptpay:STATE.settings.promptpay,qr:STATE.settings.qr});
+  const promptpay=document.getElementById('cfgPromptpay').value.trim();
+  const bankType=document.getElementById('cfgBankType').value;
+  const accountName=document.getElementById('cfgAccountName').value.trim();
+  const qrEl=document.getElementById('cfgQrPreview');
+  const qr=qrEl?.src&&qrEl.src.startsWith('data:')?qrEl.src:(STATE.isHost?STATE.currentHost.paymentCfg?.qr||'':STATE.settings.qr||'');
+  if(STATE.isHost){
+    if(!STATE.currentHost.paymentCfg)STATE.currentHost.paymentCfg={};
+    STATE.currentHost.paymentCfg={promptpay,bankType,accountName,qr};
+    const idx=STATE.hosts.findIndex(h=>h.id===STATE.currentHost.id);
+    if(idx>=0)STATE.hosts[idx].paymentCfg=STATE.currentHost.paymentCfg;
+    await gsWrite({action:'updateHostPayment',id:STATE.currentHost.id,paymentCfg:JSON.stringify(STATE.currentHost.paymentCfg)});
+  } else {
+    STATE.settings={...STATE.settings,promptpay,bankType,accountName,qr};
+    await gsWrite({action:'saveSettings',promptpay,bankType,accountName,qr});
+  }
   hideLoading();toast('บันทึกแล้ว ✓');
 }
 
@@ -939,11 +1035,13 @@ function filterUsersByGroup(gid){
   document.querySelectorAll('.user-cb-row').forEach(row=>{
     if(!gid){row.style.display='';return;}
     const groups=JSON.parse(row.dataset.groups||'[]');
-    row.style.display=groups.includes(gid)?'':'none';
-    if(!groups.includes(gid))row.querySelector('input').checked=false;
+    const inGroup=groups.includes(gid);
+    row.style.display=inGroup?'':'none';
+    const cb=row.querySelector('input');
+    cb.checked=inGroup;
+    if(!inGroup)cb.checked=false;
   });
 }
-
 function addSubItem(){
   subItemCount++;const id=subItemCount;
   const cbU=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="sic_${id}_${u.id}" value="${u.id}"><label for="sic_${id}_${u.id}" style="cursor:pointer;font-size:13px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
