@@ -67,11 +67,11 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
 <body>
 <script>
 const CFG={
-  SHEET_URL:'https://script.google.com/macros/s/AKfycbz7p2RDv3SHACSIe2uqlG9S4ppKhSdRjVuPC0MuM5AGnx_awNv--FcDPY1cHVCD7MOh/exec',
-  EMAILJS_KEY:'OJimmjdJNEAG_BMEY',
-  EMAILJS_SERVICE:'service_5755b1o',
-  EMAILJS_TPL_USER:'template_kytkrgn',
-  EMAILJS_TPL_ADMIN:'template_ae8x5u2',
+  SHEET_URL:'YOUR_APPS_SCRIPT_WEB_APP_URL',
+  EMAILJS_KEY:'YOUR_EMAILJS_PUBLIC_KEY',
+  EMAILJS_SERVICE:'YOUR_SERVICE_ID',
+  EMAILJS_TPL_USER:'YOUR_USER_TEMPLATE_ID',
+  EMAILJS_TPL_ADMIN:'YOUR_ADMIN_TEMPLATE_ID',
   ADMIN_NAME:'Por :V',
   ADMIN_PASS:'1736'
 };
@@ -123,9 +123,25 @@ const CFG={
   <div class="modal">
     <h2>✏️ แก้ไขรายการ</h2>
     <label>ชื่อรายการ</label><input id="editListName">
-    <div id="editListAmounts"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
+    <label>ประเภท</label>
+    <select id="editListType" onchange="onEditListTypeChange()">
+      <option value="normal">📋 แบ่งปกติ</option>
+      <option value="advance">🧮 แบ่งละเอียด</option>
+      <option value="subscription">🔄 Subscription</option>
+    </select>
+    <label>ยอดรวม (฿)</label>
+    <input type="number" id="editListTotal" step="0.01" placeholder="0.00">
+    <label>สมาชิก</label>
+    <div id="editListMembers" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;max-height:160px;overflow-y:auto"></div>
+    <div id="editListAmountsWrap"><label>ยอดแต่ละคน</label><div id="editListAmounts"></div></div>
+    <div id="editListSubWrap" style="display:none">
+      <label>รายการย่อย</label>
+      <div id="editSubItemsCont"></div>
+      <button class="btn btn-outline btn-sm" style="margin-bottom:8px" onclick="addEditSubItem()">+ รายการย่อย</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-outline" style="flex:1" onclick="closeModal('editListModal')">ยกเลิก</button>
+      <button class="btn btn-outline" style="flex:1" onclick="recalcEditList()">คำนวณ</button>
       <button class="btn btn-primary" style="flex:1" onclick="saveEditList()">บันทึก</button>
     </div>
   </div>
@@ -144,6 +160,35 @@ const CFG={
       <button class="btn btn-outline" style="flex:1" onclick="closeModal('editSubModal')">ยกเลิก</button>
       <button class="btn btn-primary" style="flex:1" onclick="calcSubEdit()">คำนวณ</button>
       <button class="btn btn-primary" style="flex:1" onclick="confirmSubMonth()">ส่ง</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editUserModal">
+  <div class="modal" style="max-width:340px">
+    <h2>✏️ แก้ไขผู้ใช้</h2>
+    <label>ชื่อ</label><input id="euName">
+    <label>อีเมล</label><input type="email" id="euEmail">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('editUserModal')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveEditUser()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editSubTemplateModal">
+  <div class="modal">
+    <h2>✏️ แก้ไข Subscription</h2>
+    <label>ชื่อ</label><input id="est_name">
+    <label>ยอดต่อเดือน (฿)</label><input type="number" id="est_total" step="0.01">
+    <label>สมาชิก</label>
+    <div id="est_members" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;max-height:200px;overflow-y:auto"></div>
+    <label>ยอดแต่ละคน (แก้ไขได้)</label>
+    <div id="est_amounts"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('editSubTemplateModal')">ยกเลิก</button>
+      <button class="btn btn-outline" style="flex:1" onclick="calcSubTemplate()">คำนวณ</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveSubTemplate()">บันทึก</button>
     </div>
   </div>
 </div>
@@ -255,8 +300,8 @@ const CFG={
 </div>
 
 <script>
-let STATE={users:[],lists:[],payments:[],pendingPays:[],groups:[],hosts:[],currentUser:null,isAdmin:false,isHost:false,currentHost:null,currentGroup:null,settings:{promptpay:'',qr:'',bankType:'promptpay'},editingListId:null,editingSubId:null,editSubData:null};
-let calcData={},subItemCount=0,listQueue=[];
+let STATE={users:[],lists:[],payments:[],pendingPays:[],groups:[],hosts:[],currentUser:null,isAdmin:false,isHost:false,currentHost:null,currentGroup:null,settings:{promptpay:'',qr:'',bankType:'promptpay'},editingListId:null,editingSubId:null,editSubData:null,_editingUserId:null};
+let calcData={},subItemCount=0,editSubItemCount=0,listQueue=[];
 const USE_LOCAL=CFG.SHEET_URL==='YOUR_APPS_SCRIPT_WEB_APP_URL';
 emailjs.init(CFG.EMAILJS_KEY);
 
@@ -733,19 +778,74 @@ function listsSubTab(tab){
 
 function openEditList(lid){
   const l=STATE.lists.find(x=>x.id===lid);if(!l)return;
-  STATE.editingListId=lid;
+  STATE.editingListId=lid;editSubItemCount=0;
   document.getElementById('editListName').value=l.name;
-  document.getElementById('editListAmounts').innerHTML=(l.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" id="ea_${uid}" value="${getUserAmount(l,uid).toFixed(2)}" step="0.01"></div>`;}).join('');
+  document.getElementById('editListTotal').value=l.total||'';
+  document.getElementById('editListType').value=l.type||'normal';
+  document.getElementById('editListMembers').innerHTML=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="elm_${u.id}" value="${u.id}" ${(l.members||[]).includes(u.id)?'checked':''}><label for="elm_${u.id}" style="cursor:pointer;font-size:14px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
+  onEditListTypeChange(l);
   openModal('editListModal');
+}
+
+function onEditListTypeChange(listObj){
+  const l=listObj&&listObj.id?listObj:STATE.lists.find(x=>x.id===STATE.editingListId);
+  const type=document.getElementById('editListType').value;
+  const isAdv=type==='advance';
+  document.getElementById('editListSubWrap').style.display=isAdv?'':'none';
+  document.getElementById('editListAmountsWrap').style.display=isAdv?'none':'';
+  if(isAdv){
+    editSubItemCount=0;
+    document.getElementById('editSubItemsCont').innerHTML='';
+    (l?.subItems||[]).forEach(si=>addEditSubItem(si));
+    if(!(l?.subItems||[]).length)addEditSubItem();
+  }else{
+    const members=Array.from(document.querySelectorAll('[id^="elm_"]:checked')).map(x=>x.value);
+    document.getElementById('editListAmounts').innerHTML=members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);const amt=l?getUserAmount(l,uid):0;return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" id="ea_${uid}" value="${amt.toFixed(2)}" step="0.01"></div>`;}).join('');
+  }
+}
+
+function addEditSubItem(si){
+  editSubItemCount++;const id=editSubItemCount;
+  const cbU=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="esic_${id}_${u.id}" value="${u.id}" ${si&&(si.members||[]).includes(u.id)?'checked':''}><label for="esic_${id}_${u.id}" style="cursor:pointer;font-size:13px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
+  const div=document.createElement('div');div.className='edit-sub-item';div.style.cssText='border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px';
+  div.innerHTML=`<div class="flex-between" style="margin-bottom:8px"><span style="font-size:13px;font-weight:500;color:var(--muted)">รายการย่อย #${id}</span><button class="btn btn-outline btn-sm" onclick="this.closest('.edit-sub-item').remove()">ลบ</button></div><div class="grid2"><div><label>ชื่อ</label><input class="esi_name" placeholder="ชื่อ" value="${si?si.name:''}"></div><div><label>ราคา (฿)</label><input class="esi_price" type="number" placeholder="0" value="${si?si.price:''}"></div></div><label>ผู้ที่ต้องจ่าย</label><div style="border:1px solid var(--border);border-radius:6px;padding:6px">${cbU}</div>`;
+  document.getElementById('editSubItemsCont').appendChild(div);
+}
+
+function recalcEditList(){
+  const type=document.getElementById('editListType').value;
+  if(type==='advance')return;
+  const total=Number(document.getElementById('editListTotal').value)||0;
+  const members=Array.from(document.querySelectorAll('[id^="elm_"]:checked')).map(x=>x.value);
+  if(!members.length){toast('เลือกสมาชิกก่อน');return;}
+  const each=total/members.length;
+  document.getElementById('editListAmounts').innerHTML=members.map(uid=>{const u=STATE.users.find(x=>x.id===uid);return`<div class="amount-row"><span>${u?.name||uid}</span><input type="number" id="ea_${uid}" value="${each.toFixed(2)}" step="0.01"></div>`;}).join('');
 }
 
 async function saveEditList(){
   const l=STATE.lists.find(x=>x.id===STATE.editingListId);if(!l)return;
+  const name=document.getElementById('editListName').value.trim();
+  const type=document.getElementById('editListType').value;
+  if(!name){toast('กรอกชื่อ');return;}
+  const members=Array.from(document.querySelectorAll('[id^="elm_"]:checked')).map(x=>x.value);
+  if(!members.length){toast('เลือกสมาชิก');return;}
   showLoading('กำลังบันทึก...');
-  l.name=document.getElementById('editListName').value.trim();
-  (l.members||[]).forEach(uid=>{const inp=document.getElementById('ea_'+uid);if(inp)l.userAmounts[uid]=Number(inp.value);});
-  l.total=Object.values(l.userAmounts||{}).reduce((a,v)=>a+Number(v),0);
-  await gsWrite({action:'updateList',id:l.id,name:l.name,total:l.total,userAmounts:JSON.stringify(l.userAmounts)});
+  l.name=name;l.type=type;l.members=members;
+  if(type==='advance'){
+    const subs=[];
+    document.querySelectorAll('.edit-sub-item').forEach((div,idx)=>{
+      const n=div.querySelector('.esi_name').value.trim(),p=Number(div.querySelector('.esi_price').value);
+      const m=Array.from(div.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
+      if(n&&p&&m.length)subs.push({name:n,price:p,members:m});
+    });
+    if(!subs.length){hideLoading();toast('เพิ่มรายการย่อยอย่างน้อย 1 รายการ');return;}
+    const ua={};subs.forEach(s=>s.members.forEach(uid=>{ua[uid]=(ua[uid]||0)+s.price/s.members.length;}));
+    l.subItems=subs;l.userAmounts=ua;l.total=subs.reduce((a,s)=>a+s.price,0);
+  }else{
+    const ua={};members.forEach(uid=>{const inp=document.getElementById('ea_'+uid);ua[uid]=inp?Number(inp.value):0;});
+    l.userAmounts=ua;l.total=Object.values(ua).reduce((a,v)=>a+v,0);l.subItems=[];
+  }
+  await gsWrite({action:'updateList',id:l.id,name:l.name,type:l.type,total:l.total,members:JSON.stringify(l.members),userAmounts:JSON.stringify(l.userAmounts),subItems:JSON.stringify(l.subItems||[])});
   hideLoading();closeModal('editListModal');toast('แก้ไขแล้ว ✅');renderAdminLists();
 }
 
@@ -776,7 +876,7 @@ function renderUsersGroups(mode){
     return`<div class="list-item" style="flex-wrap:wrap;gap:8px;align-items:flex-start">
       <div style="flex:1;min-width:0">
         <div style="font-weight:500">${u.name} ${u.addedById?`<span class="host-badge">Host</span>`:''}</div>
-        <div style="font-size:12px;color:var(--muted)">${u.email}</div>
+        <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">${u.email}<button class="btn btn-outline btn-sm" style="padding:2px 7px;font-size:11px" onclick="openEditUser('${u.id}')">✏️</button></div>
         <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
           ${STATE.groups.map(g=>{const inGroup=(u.groups||[]).includes(g.id);const canEdit=true;return canEdit?`<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid ${inGroup?'var(--accent)':'var(--border)'};background:${inGroup?'#f0f7f4':'#f5f5f3'}"><input type="checkbox" style="width:auto;margin:0" ${inGroup?'checked':''} onchange="toggleUserGroup('${u.id}','${g.id}',this.checked,'${mode}')">${g.name}</label>`:`<span class="tag" style="${inGroup?'background:#f0f7f4;border:1px solid var(--accent)':''}">${g.name}</span>`;}).join('')}
         </div>
@@ -862,11 +962,31 @@ async function removeUser(uid,mode){
   hideLoading();renderGroupGrid();renderUsersGroups(mode);toast('ลบแล้ว');
 }
 
+function openEditUser(uid){
+  const u=STATE.users.find(x=>x.id===uid);if(!u)return;
+  STATE._editingUserId=uid;
+  document.getElementById('euName').value=u.name;
+  document.getElementById('euEmail').value=u.email||'';
+  openModal('editUserModal');
+}
+
+async function saveEditUser(){
+  const u=STATE.users.find(x=>x.id===STATE._editingUserId);if(!u)return;
+  const name=document.getElementById('euName').value.trim();
+  const email=document.getElementById('euEmail').value.trim();
+  if(!name||!email){toast('กรอกให้ครบ');return;}
+  showLoading('กำลังบันทึก...');
+  u.name=name;u.email=email;
+  await gsWrite({action:'updateUser',id:u.id,name,email});
+  hideLoading();closeModal('editUserModal');toast('แก้ไขแล้ว ✅');
+  renderUsersGroups(STATE.isAdmin?'admin':'host');
+}
+
 // ── Subscriptions ──
 function renderSubList(){
   const el=document.getElementById('tab_subscriptions');if(!el)return;
   const subs=STATE.lists.filter(l=>l.type==='subscription');
-  el.innerHTML=subs.map(s=>`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${s.name}</div><div style="font-size:12px;color:var(--muted)">฿${fmt(s.total)}/เดือน</div></div><button class="btn btn-primary btn-sm" onclick="openSubEdit('${s.id}')">+ เดือนใหม่</button></div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${(s.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);return u?`<span class="tag">${u.name} ฿${fmt(getUserAmount(s,uid))}</span>`:''}).join('')}</div></div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มี Subscription</div>';
+  el.innerHTML=subs.map(s=>`<div class="card"><div class="flex-between"><div><div style="font-weight:500">${s.name}</div><div style="font-size:12px;color:var(--muted)">฿${fmt(s.total)}/เดือน</div></div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openEditSubTemplate('${s.id}')">✏️ แก้ไข</button><button class="btn btn-primary btn-sm" onclick="openSubEdit('${s.id}')">+ เดือนใหม่</button></div></div><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${(s.members||[]).map(uid=>{const u=STATE.users.find(x=>x.id===uid);return u?`<span class="tag">${u.name} ฿${fmt(getUserAmount(s,uid))}</span>`:''}).join('')}</div></div>`).join('')||'<div class="card" style="text-align:center;color:var(--muted);padding:32px">ยังไม่มี Subscription</div>';
 }
 
 function openSubEdit(sid){
@@ -902,6 +1022,44 @@ async function confirmSubMonth(){
   await gsWrite({action:'addList',id:nl.id,name:nl.name,type:nl.type,total:nl.total,members:JSON.stringify(nl.members),userAmounts:JSON.stringify(nl.userAmounts),subItems:'[]',addedBy:nl.addedBy||'',addedById:nl.addedById||''});
   notifyUsersNewList(nl);
   hideLoading();closeModal('editSubModal');toast('เพิ่มรอบใหม่แล้ว ✓');renderSubList();renderAdminOverview(STATE.isAdmin?'admin':'host');
+}
+
+function openEditSubTemplate(sid){
+  const sub=STATE.lists.find(l=>l.id===sid);if(!sub)return;
+  STATE.editingSubId=sid;
+  document.getElementById('est_name').value=sub.name;
+  document.getElementById('est_total').value=sub.total||'';
+  document.getElementById('est_members').innerHTML=STATE.users.map(u=>`<div class="cb-row"><input type="checkbox" id="estm_${u.id}" value="${u.id}" ${(sub.members||[]).includes(u.id)?'checked':''}><label for="estm_${u.id}" style="cursor:pointer;font-size:14px;color:var(--text);margin:0">${u.name}</label></div>`).join('');
+  calcSubTemplate(sub);
+  openModal('editSubTemplateModal');
+}
+
+function calcSubTemplate(sub){
+  const sid=STATE.editingSubId;
+  const s=sub||(sid?STATE.lists.find(l=>l.id===sid):null);
+  const total=Number(document.getElementById('est_total').value)||0;
+  const members=Array.from(document.querySelectorAll('[id^="estm_"]:checked')).map(x=>x.value);
+  if(!members.length){document.getElementById('est_amounts').innerHTML='';return;}
+  const each=members.length?total/members.length:0;
+  document.getElementById('est_amounts').innerHTML=members.map(uid=>{
+    const u=STATE.users.find(x=>x.id===uid);
+    const existing=s?getUserAmount(s,uid):each;
+    return`<div class="sub-edit-row"><span>${u?.name||uid}</span><input type="number" id="esta_${uid}" value="${(existing||each).toFixed(2)}" step="0.01"></div>`;
+  }).join('');
+}
+
+async function saveSubTemplate(){
+  const sub=STATE.lists.find(l=>l.id===STATE.editingSubId);if(!sub)return;
+  const name=document.getElementById('est_name').value.trim();
+  const members=Array.from(document.querySelectorAll('[id^="estm_"]:checked')).map(x=>x.value);
+  if(!name||!members.length){toast('กรอกข้อมูลให้ครบ');return;}
+  const ua={};
+  members.forEach(uid=>{const inp=document.getElementById('esta_'+uid);ua[uid]=inp?Number(inp.value):0;});
+  const total=Object.values(ua).reduce((a,v)=>a+v,0);
+  showLoading('กำลังบันทึก...');
+  sub.name=name;sub.members=members;sub.userAmounts=ua;sub.total=total;
+  await gsWrite({action:'updateList',id:sub.id,name:sub.name,type:sub.type,total:sub.total,members:JSON.stringify(sub.members),userAmounts:JSON.stringify(sub.userAmounts),subItems:JSON.stringify(sub.subItems||[])});
+  hideLoading();closeModal('editSubTemplateModal');toast('แก้ไขแล้ว ✅');renderSubList();
 }
 
 // ── Settings ──
@@ -1038,13 +1196,10 @@ function showAddForm(type,mode){
 
 function filterUsersByGroup(gid){
   document.querySelectorAll('.user-cb-row').forEach(row=>{
-    if(!gid){row.style.display='';return;}
+    row.style.display='';
+    if(!gid)return;
     const groups=JSON.parse(row.dataset.groups||'[]');
-    const inGroup=groups.includes(gid);
-    row.style.display=inGroup?'':'none';
-    const cb=row.querySelector('input');
-    cb.checked=inGroup;
-    if(!inGroup)cb.checked=false;
+    row.querySelector('input').checked=groups.includes(gid);
   });
 }
 function addSubItem(){
